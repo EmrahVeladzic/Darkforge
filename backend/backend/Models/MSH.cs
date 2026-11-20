@@ -30,6 +30,9 @@ namespace backend.Models
         [Column("BNID")]
         public int? BN_ID { get; set; }
 
+        [Column("Material")]
+        public byte Material { get; set; }
+
         [ForeignKey(nameof(VT_ID))]
         public virtual VT? VT { get; set; }
 

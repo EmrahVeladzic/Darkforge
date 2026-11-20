@@ -149,7 +149,7 @@ namespace backend.Models
 
                         bool has_uv = m.UV != null && m.UV.Serialized != null && m.UV.Serialized.Length == vertex_count * 2;
 
-                        temp.Add(has_uv? (byte)1 : (byte)0);
+                        temp.Add(m.Material);
 
                         PrimitiveSerialization.SerializePrimitive((UInt16)vertex_count, temp);
 

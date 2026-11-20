@@ -508,6 +508,20 @@ namespace backend.Converters
 
                         if (subMeshes[i].TryGetProperty("primitives", out JsonElement primitives) && primitives.ValueKind == JsonValueKind.Array)
                         {
+
+                            if (primitives[0].TryGetProperty("material", out JsonElement a_material) && a_material.TryGetInt32(out Int32 mat_index) && Model!.Metadata.RootElement.TryGetProperty("materials", out JsonElement materials) && materials.ValueKind == JsonValueKind.Array && mat_index < materials.GetArrayLength())
+                            {
+                                if (!(materials[mat_index].TryGetProperty("doubleSided", out JsonElement d_sided) && d_sided.ValueKind == JsonValueKind.True))
+                                {
+                                    Meshes[i].Material = 0;
+                                }
+                                else
+                                {
+                                    Meshes[i].Material = 1;
+                                }
+                            }
+
+
                             if (primitives[0].TryGetProperty("indices", out JsonElement a_indices) && a_indices.TryGetInt32(out Int32 ind_access))
                             {
 

@@ -238,9 +238,9 @@ export class Mesh{
     public ind?:Index | null;
     public nrm?:Normal | null;
     public uv?:UV | null;
-
+    public material : number;
     
-    constructor(id:number,v:Vertex | null,i:Index | null,n:Normal | null,u:UV | null,b:number | null) {
+    constructor(id:number, mat:number ,v:Vertex | null,i:Index | null,n:Normal | null,u:UV | null,b:number | null) {
         
         this.id=id;
         this.bN_ID=b;
@@ -248,6 +248,7 @@ export class Mesh{
         this.ind=i;
         this.nrm=n;
         this.uv=u;
+        this.material=mat;
     }
 
 }

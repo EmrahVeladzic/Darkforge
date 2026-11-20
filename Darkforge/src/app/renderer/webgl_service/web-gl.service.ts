@@ -346,6 +346,12 @@ export class WebGLService {
           this.gl.vertexAttribPointer(uv,2,this.gl.FLOAT,false,2*Float32Array.BYTES_PER_ELEMENT,0*Float32Array.BYTES_PER_ELEMENT);
           this.gl.enableVertexAttribArray(uv);
     
+          if(((ast.mdl?.meshes[i].material ?? 0) & 1) == 0){
+            this.gl.enable(this.gl.CULL_FACE);
+          }
+          else{
+            this.gl.disable(this.gl.CULL_FACE);
+          }
           
           this.gl!.drawElements(this.gl!.TRIANGLES,ast.mdl?.meshes[i].ind?.indices!.length??0,this.gl!.UNSIGNED_SHORT,0);
         
