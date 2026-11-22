@@ -82,11 +82,6 @@ export class RpfFormComponent implements OnInit{
 
     const value = this.field_value('clut');
 
-    if(value>16 && this.preview!.width>128){
-      this.form.get('clut')?.setValue(16);
-      return;
-    }
-
     const divisor = (value>16)?2:4;
 
     const hw_width = Math.ceil(this.preview!.width/divisor);
@@ -96,7 +91,8 @@ export class RpfFormComponent implements OnInit{
 
     let tx = Math.min(this.field_value('tex_x'),tx_max);
 
-    const u_limit = Math.floor((64-hw_width)/16)*16;
+    const page_hw = (value>16)?128:64;
+    const u_limit = Math.floor((page_hw-hw_width)/16)*16;
 
     if((tx&63)>u_limit){
 
