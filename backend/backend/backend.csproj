@@ -9,6 +9,7 @@
 
 	<ItemGroup>
 		<EmbeddedResource Include="..\..\DB\DarkforgeDB.sql" LogicalName="DarkforgeDB.sql" />
+		<UpToDateCheckInput Include="..\..\Darkforge\src\**" />
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">

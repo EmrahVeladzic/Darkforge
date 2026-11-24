@@ -116,7 +116,7 @@ export class TextureDTO{
     public texRow : boolean;
     public tex_X : number;
     public tex_Y : number;
-    public cluT_Row : boolean;
+    public clutRow : boolean;
     public cluT_X : number;
     public cluT_Y : number;
 
@@ -130,7 +130,7 @@ export class TextureDTO{
         this.texRow = trow;
         this.tex_X = tx;
         this.tex_Y = ty;
-        this.cluT_Row = crow;
+        this.clutRow = crow;
         this.cluT_X = cx;
         this.cluT_Y = cy;
     }
