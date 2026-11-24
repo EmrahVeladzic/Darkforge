@@ -77,7 +77,7 @@ namespace backend.Controllers
 
                 ActiveWL Log = new ActiveWL();
 
-                int Id = Sfx.Output!.ID;
+                long Id = Sfx.Output!.ID;
 
                 Log.Id = Id;
                 Log.FileID = input.SoundHash;
@@ -102,7 +102,7 @@ namespace backend.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int id)
+        public async Task<IActionResult> Get([FromQuery] long id)
         {
 
             using (DarkforgeDBContext ctx = new DarkforgeDBContext())
@@ -151,7 +151,7 @@ namespace backend.Controllers
 
 
         [HttpDelete]
-        public async Task<IActionResult> Delete([FromQuery] int id)
+        public async Task<IActionResult> Delete([FromQuery] long id)
         {
 
             using (DarkforgeDBContext ctx = new DarkforgeDBContext())

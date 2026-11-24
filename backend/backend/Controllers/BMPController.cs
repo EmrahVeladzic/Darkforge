@@ -38,11 +38,11 @@ namespace backend.Controllers
                     RPF? texture = await ctx.RPFs.FindAsync(Optimization.Id);
 
                     texture!.TexRow = input.TexRow;
-                    texture!.TexX = (Int16)input.Tex_X;
+                    texture!.TexX = input.Tex_X;
                     texture!.TexY = input.Tex_Y;
 
                     texture!.CLUTRow = input.CLUTRow;
-                    texture!.CLUTX = (Int16)input.CLUT_X;
+                    texture!.CLUTX = input.CLUT_X;
                     texture!.CLUTY = input.CLUT_Y;
 
 
@@ -100,7 +100,7 @@ namespace backend.Controllers
 
                 ActiveRPF Log = new ActiveRPF();
 
-                int Id = Img.Output!.ID;
+                long Id = Img.Output!.ID;
 
                 Log.Id = Id;
                 Log.FileID = input.ImageHash;
@@ -142,7 +142,7 @@ namespace backend.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int id)
+        public async Task<IActionResult> Get([FromQuery] long id)
         {
 
 
@@ -187,7 +187,7 @@ namespace backend.Controllers
         }
 
         [HttpDelete]
-        public async Task<IActionResult> Delete([FromQuery] int id)
+        public async Task<IActionResult> Delete([FromQuery] long id)
         {
 
             using (DarkforgeDBContext ctx = new DarkforgeDBContext())

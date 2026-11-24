@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { base_url } from './http';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -14,4 +15,6 @@ import { RouterModule } from '@angular/router';
 })
 export class AppComponent {
   title = 'Darkforge';
+
+  private live = new EventSource(base_url + "/api/App/live");
 }

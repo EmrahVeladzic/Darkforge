@@ -5,16 +5,16 @@ using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
-    [Table("BN",Schema ="Models")]
-    public class BN:BaseBufferEntity
+    [Table("BN", Schema = "Models")]
+    public class BN : BaseBufferEntity
     {
         [JsonIgnore]
         [Column("FKRID")]
-        public int FKR_ID { get; set; }
+        public long FKR_ID { get; set; }
 
         [Column("Parent")]
-        public int? Parent_ID { get; set; }
-     
+        public long? Parent_ID { get; set; }
+
         [NotMapped]
         public List<Int32> InitialTranslation { get; set; }
 
@@ -22,11 +22,11 @@ namespace backend.Models
         public List<Int16> InitialRotation { get; set; }
 
         [NotMapped]
-        public List<Int16> InitialScale{ get; set; }
+        public List<Int16> InitialScale { get; set; }
 
-        public BN():base()
+        public BN() : base()
         {
-            
+
             InitialTranslation = new();
             InitialRotation = new();
             InitialScale = new();
@@ -54,7 +54,7 @@ namespace backend.Models
             }
 
 
-            this.Serialized=this.ToSerialize.ToArray();
+            this.Serialized = this.ToSerialize.ToArray();
 
         }
 

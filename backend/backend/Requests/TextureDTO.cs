@@ -16,7 +16,7 @@
         //Pixel grid.
         public List<byte>? Pixels { get; set; }
 
-        public int RPF_ID { get; set; }
+        public long RPF_ID { get; set; }
 
 
         public bool TexRow { get; set; }

@@ -6,16 +6,16 @@ using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
-    [Table("TK",Schema ="Models")]
-    public class TK:BaseBufferEntity
+    [Table("TK", Schema = "Models")]
+    public class TK : BaseBufferEntity
     {
-        
+
         [Column("BNID")]
-        public int BN_ID { get; set; }
+        public long BN_ID { get; set; }
 
         [JsonIgnore]
         [Column("ANMID")]
-        public int ANM_ID { get; set; }
+        public long ANM_ID { get; set; }
 
         [JsonIgnore]
         [Column("T_Count")]
@@ -48,7 +48,7 @@ namespace backend.Models
         public List<byte> S_Frames { get; set; }
 
 
-        public TK():base()
+        public TK() : base()
         {
             this.Translations = new();
             this.Rotations = new();
@@ -63,87 +63,87 @@ namespace backend.Models
         {
             this.ToSerialize = new List<byte>();
 
-            for(int i = 0; i < this.T_Frames.Count; i++)
+            for (int i = 0; i < this.T_Frames.Count; i++)
             {
                 this.ToSerialize.Add(this.T_Frames[i]);
 
-                PrimitiveSerialization.SerializePrimitive(this.Translations[(i*3)],this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Translations[(i*3)+1], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Translations[(i*3)+2], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Translations[(i * 3)], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Translations[(i * 3) + 1], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Translations[(i * 3) + 2], this.ToSerialize);
 
 
             }
 
-            for (int i = 0; i < this.R_Frames.Count; i ++)
+            for (int i = 0; i < this.R_Frames.Count; i++)
             {
 
                 this.ToSerialize.Add(this.R_Frames[i]);
 
-                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i*4)], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i*4) + 1], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i*4) + 2], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i*4) + 3], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i * 4)], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i * 4) + 1], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i * 4) + 2], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Rotations[(i * 4) + 3], this.ToSerialize);
 
 
             }
 
-            for (int i = 0; i < this.S_Frames.Count; i ++)
+            for (int i = 0; i < this.S_Frames.Count; i++)
             {
                 this.ToSerialize.Add(this.S_Frames[i]);
 
-                PrimitiveSerialization.SerializePrimitive(this.Scales[(i*3)], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Scales[(i*3) + 1], this.ToSerialize);
-                PrimitiveSerialization.SerializePrimitive(this.Scales[(i*3) + 2], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Scales[(i * 3)], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Scales[(i * 3) + 1], this.ToSerialize);
+                PrimitiveSerialization.SerializePrimitive(this.Scales[(i * 3) + 2], this.ToSerialize);
 
 
             }
 
-            this.Serialized=this.ToSerialize.ToArray();
+            this.Serialized = this.ToSerialize.ToArray();
         }
 
         public override void Deserialize()
-        {          
+        {
             int offset = 0;
 
-           
+
             for (int i = 0; i < (int)this.T_Count; i++)
             {
                 this.T_Frames.Add(this.Serialized![offset]);
-                offset += 1; 
+                offset += 1;
 
                 this.Translations.Add(BitConverter.ToInt32(this.Serialized!, offset));
                 this.Translations.Add(BitConverter.ToInt32(this.Serialized!, offset + 4));
                 this.Translations.Add(BitConverter.ToInt32(this.Serialized!, offset + 8));
-                offset += 12; 
+                offset += 12;
             }
 
-           
+
             for (int i = 0; i < (int)this.R_Count; i++)
             {
                 this.R_Frames.Add(this.Serialized![offset]);
-                offset += 1; 
+                offset += 1;
 
                 this.Rotations.Add(BitConverter.ToInt16(this.Serialized!, offset));
                 this.Rotations.Add(BitConverter.ToInt16(this.Serialized!, offset + 2));
                 this.Rotations.Add(BitConverter.ToInt16(this.Serialized!, offset + 4));
                 this.Rotations.Add(BitConverter.ToInt16(this.Serialized!, offset + 6));
-                offset += 8; 
+                offset += 8;
             }
 
-           
+
             for (int i = 0; i < (int)this.S_Count; i++)
             {
                 this.S_Frames.Add(this.Serialized![offset]);
-                offset += 1; 
+                offset += 1;
 
                 this.Scales.Add(BitConverter.ToInt16(this.Serialized!, offset));
                 this.Scales.Add(BitConverter.ToInt16(this.Serialized!, offset + 2));
                 this.Scales.Add(BitConverter.ToInt16(this.Serialized!, offset + 4));
-                offset += 6; 
+                offset += 6;
             }
 
 
-            
+
         }
 
         public override void Clear()

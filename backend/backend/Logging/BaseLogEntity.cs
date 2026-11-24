@@ -7,7 +7,7 @@ namespace backend.Logging
     {
         [Key]
         [Column("ID")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
 
         [Column("FileID")]

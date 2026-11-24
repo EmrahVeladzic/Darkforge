@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    [Table("FKR",Schema ="Models")]
-    public class FKR:BaseEntity
+    [Table("FKR", Schema = "Models")]
+    public class FKR : BaseEntity
     {
         [NotMapped]
         public List<BN> Bones { get; set; }
@@ -15,10 +15,10 @@ namespace backend.Models
         [Column("TargetFPS")]
         public byte? FPS { get; set; }
 
-        [NotMapped]       
-        public int? Root { get; set; }
+        [NotMapped]
+        public long? Root { get; set; }
 
-        public FKR():base()
+        public FKR() : base()
         {
             Bones = new List<BN>();
             Animations = new List<ANM>();
@@ -39,12 +39,12 @@ namespace backend.Models
 
         public override void Deserialize()
         {
-            foreach(BN b in Bones)
+            foreach (BN b in Bones)
             {
                 b.Deserialize();
             }
-            foreach(ANM a in Animations)
-            { 
+            foreach (ANM a in Animations)
+            {
                 a.Deserialize();
             }
 
@@ -52,12 +52,12 @@ namespace backend.Models
 
         public override void Clear()
         {
-            foreach(BN b in Bones)
+            foreach (BN b in Bones)
             {
                 b.Clear();
             }
             this.Bones.Clear();
-            foreach(ANM a in Animations)
+            foreach (ANM a in Animations)
             {
                 a.Clear();
             }

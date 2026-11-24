@@ -8,27 +8,27 @@ namespace backend.Models
     {
         [JsonIgnore]
         [Column("MDLID")]
-        public int MDL_ID { get; set; }
+        public long MDL_ID { get; set; }
 
         [JsonIgnore]
         [Column("VTID")]
-        public int? VT_ID { get; set; }
+        public long? VT_ID { get; set; }
 
         [JsonIgnore]
         [Column("INDID")]
-        public int? IND_ID { get; set; }
+        public long? IND_ID { get; set; }
 
         [JsonIgnore]
         [Column("UVID")]
-        public int? UV_ID { get; set; }
+        public long? UV_ID { get; set; }
 
         [JsonIgnore]
         [Column("NRMID")]
-        public int? NRM_ID { get; set; }
+        public long? NRM_ID { get; set; }
 
 
         [Column("BNID")]
-        public int? BN_ID { get; set; }
+        public long? BN_ID { get; set; }
 
         [Column("Material")]
         public byte Material { get; set; }

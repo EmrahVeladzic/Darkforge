@@ -1,7 +1,6 @@
 ﻿using backend.Converters;
 using backend.Utils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.InteropServices;
@@ -21,7 +20,7 @@ namespace backend.Models
 
 
         [Column("PLTID")]
-        public int PLT_ID { get; set; }
+        public long PLT_ID { get; set; }
 
 
         [ForeignKey(nameof(PLT_ID))]
@@ -29,7 +28,7 @@ namespace backend.Models
 
 
         [Column("PGAID")]
-        public int PGA_ID { get; set; }
+        public long PGA_ID { get; set; }
 
 
         [ForeignKey(nameof(PGA_ID))]
@@ -48,7 +47,7 @@ namespace backend.Models
         public bool TexRow { get; set; }
 
         [Column("TexX")]
-        public Int16 TexX { get; set; }
+        public UInt16 TexX { get; set; }
 
 
         [Column("TexY")]
@@ -58,7 +57,7 @@ namespace backend.Models
         public bool CLUTRow { get; set; }
 
         [Column("CLUTX")]
-        public Int16 CLUTX { get; set; }
+        public UInt16 CLUTX { get; set; }
 
 
         [Column("CLUTY")]
@@ -107,8 +106,8 @@ namespace backend.Models
 
             List<Pixel15> palette = PLT?.Data ?? new List<Pixel15>();
             int clut_span = this.CLUT + 1;
-            
-            clut_span = ((clut_span + 15) &~0xF);
+
+            clut_span = ((clut_span + 15) & ~0xF);
 
             UInt32 tex_line = (UInt32)((this.TexRow ? 256 : 0) + this.TexY);
             UInt32 tex_span = (UInt32)(padded_width / per_half);

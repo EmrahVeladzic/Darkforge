@@ -5,14 +5,14 @@ namespace backend.Models
 {
     public class BaseEntity
     {
-        
+
         [Key]
         [Column("EntityID")]
-        public int ID { get; set; }
+        public long ID { get; set; }
 
         public BaseEntity()
         {
-            
+
         }
 
         public virtual void Serialize()

@@ -1,5 +1,4 @@
-﻿
-using backend.Converters;
+﻿using backend.Converters;
 using backend.Database;
 using backend.Files;
 using backend.Logging;
@@ -108,7 +107,7 @@ namespace backend.Controllers
 
                 ActiveAST Log = new ActiveAST();
 
-                int Id = Ast.Output!.ID;
+                long Id = Ast.Output!.ID;
 
                 Log.Id = Id;
                 Log.FileID = input.ModelHash;
@@ -136,7 +135,7 @@ namespace backend.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Get([FromQuery] int id)
+        public async Task<IActionResult> Get([FromQuery] long id)
         {
 
 
@@ -203,7 +202,7 @@ namespace backend.Controllers
 
 
         [HttpDelete]
-        public async Task<IActionResult> Delete([FromQuery] int id)
+        public async Task<IActionResult> Delete([FromQuery] long id)
         {
 
 
@@ -236,5 +235,3 @@ namespace backend.Controllers
 
     }
 }
-
-

@@ -24,7 +24,7 @@ namespace backend.Requests
         public byte TexOffsetX { get; set; }
         public byte TexOffsetY { get; set; }
 
-        public int RPF_ID { get; set; }
+        public long RPF_ID { get; set; }
 
     }
 }

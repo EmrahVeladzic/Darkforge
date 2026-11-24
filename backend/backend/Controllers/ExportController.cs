@@ -21,7 +21,7 @@ namespace backend.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> Get(int ast_id, int rpf_id, int wl_id)
+        public async Task<IActionResult> Get(long ast_id, long rpf_id, long wl_id)
         {
 
 

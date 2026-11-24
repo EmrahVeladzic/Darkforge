@@ -4,20 +4,20 @@ using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
-    [Table("AST",Schema ="Models")]
-    public class AST:BaseEntity, ITopLevelModel
+    [Table("AST", Schema = "Models")]
+    public class AST : BaseEntity, ITopLevelModel
     {
         [JsonIgnore]
         [Column("MDLID")]
-        public int? MDL_ID { get; set; }
+        public long? MDL_ID { get; set; }
 
         [JsonIgnore]
         [Column("FKRID")]
-        public int? FKR_ID { get; set; }
+        public long? FKR_ID { get; set; }
 
-        
+
         [ForeignKey(nameof(MDL_ID))]
-        public virtual MDL? MDL {  get; set; }
+        public virtual MDL? MDL { get; set; }
 
         [ForeignKey(nameof(FKR_ID))]
         public virtual FKR? FKR { get; set; }
@@ -26,7 +26,7 @@ namespace backend.Models
         public byte PrecisionBits { get; set; }
 
 
-        public AST():base()
+        public AST() : base()
         {
             this.MDL = null;
             this.FKR = null;
@@ -69,9 +69,9 @@ namespace backend.Models
         {
             List<byte> temp = new List<byte>();
 
-            temp.Add(65);            
+            temp.Add(65);
             byte t_byte = 0;
-            if (this.MDL != null && this.MDL.Meshes!=null)
+            if (this.MDL != null && this.MDL.Meshes != null)
             {
                 t_byte |= 1 << 7;
 
@@ -119,10 +119,10 @@ namespace backend.Models
                 temp.Add(0);
                 temp.Add(0);
                 temp.Add(0);
-            }                
+            }
 
             t_byte = 0;
-            if (this.MDL != null && this.MDL.Meshes!=null)
+            if (this.MDL != null && this.MDL.Meshes != null)
             {
                 t_byte = (byte)this.MDL.Meshes.Count();
             }
@@ -134,9 +134,9 @@ namespace backend.Models
                 {
                     t_byte = 255;
 
-                    if (m.BN_ID != null && this.FKR!=null)
+                    if (m.BN_ID != null && this.FKR != null)
                     {
-                        t_byte=(byte)FKR!.Bones.FindIndex(b=>b.ID==m.BN_ID);
+                        t_byte = (byte)FKR!.Bones.FindIndex(b => b.ID == m.BN_ID);
                     }
 
                     temp.Add(t_byte);
@@ -145,7 +145,7 @@ namespace backend.Models
                     {
                         int vertex_count = m.VT.Serialized!.Length / 6;
 
-                       
+
 
                         bool has_uv = m.UV != null && m.UV.Serialized != null && m.UV.Serialized.Length == vertex_count * 2;
 
@@ -175,7 +175,7 @@ namespace backend.Models
                         temp.Add(0);
                         temp.Add(0);
                         temp.Add(0);
-                    }                  
+                    }
 
                     if (m.NRM != null)
                     {
@@ -232,9 +232,9 @@ namespace backend.Models
 
             t_byte = 255;
 
-            if (this.FKR != null && this.FKR.Root!=null)
+            if (this.FKR != null && this.FKR.Root != null)
             {
-                t_byte =(byte)this.FKR.Bones.FindIndex(b=>b.ID==this.FKR.Root);
+                t_byte = (byte)this.FKR.Bones.FindIndex(b => b.ID == this.FKR.Root);
             }
 
             temp.Add(t_byte);
@@ -243,15 +243,15 @@ namespace backend.Models
 
             if (this.FKR != null && this.FKR.Animations != null)
             {
-                t_byte=(byte)this.FKR.Animations.Count;
+                t_byte = (byte)this.FKR.Animations.Count;
             }
 
-            temp.Add(t_byte );
+            temp.Add(t_byte);
 
             t_byte = 0;
             if (this.FKR != null)
             {
-                t_byte = (byte)(this.FKR.FPS??0);
+                t_byte = (byte)(this.FKR.FPS ?? 0);
             }
             temp.Add(t_byte);
 
@@ -261,7 +261,7 @@ namespace backend.Models
 
                 foreach (BN bn in this.FKR!.Bones)
                 {
-                    bn_index++; 
+                    bn_index++;
 
                     temp.AddRange(bn.Serialized!);
 

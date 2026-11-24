@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace backend.Converters
 {
-    public class SFX_DATA :BaseConverter
+    public class SFX_DATA : BaseConverter
     {
 
         public WL? Output { get; set; }
@@ -27,14 +27,14 @@ namespace backend.Converters
             for (int i = 0; i < 28; i++)
             {
                 double diff = (double)(Filtered[i] - Original[i]);
-                DistanceSum += (diff*diff);
+                DistanceSum += (diff * diff);
 
             }
 
             return Math.Sqrt(DistanceSum);
         }
 
-        
+
         public Int16[] ShiftBlockDown(Int16[] input, byte shift_bits)
         {
             Int16[] Output = (Int16[])input.Clone();
@@ -42,8 +42,8 @@ namespace backend.Converters
             for (int j = 0; j < 28; j++)
             {
                 int n = Output[j] / (1 << shift_bits);
-               
-                Output[j] = (Int16)Math.Clamp(n,-8,7);
+
+                Output[j] = (Int16)Math.Clamp(n, -8, 7);
             }
 
             return Output;
@@ -56,36 +56,38 @@ namespace backend.Converters
             {
                 Output[j] = (Int16)(input[j] * (1 << shift_bits));
             }
-                return Output;
+            return Output;
         }
 
         public Int16[] FilterBlock(Int16[] Input, byte filter_select)
         {
             Int16[] Output = (Int16[])Input.Clone();
 
-    
+
             switch (filter_select)
             {
-                
-                case 1:{
 
-                     
+                case 1:
+                    {
+
+
                         for (int i = 0; i < 28; i++)
                         {
-                            Int32 acc = (Int32)Output[i]+ (((((Int32)OldSample*60) + 32)) /64 );
+                            Int32 acc = (Int32)Output[i] + (((((Int32)OldSample * 60) + 32)) / 64);
                             Output[i] = (Int16)Math.Clamp(acc, -32768, 32767);
 
                             OlderSample = OldSample;
                             OldSample = Output[i];
                         }
                         break;
-                }
-                case 2:{
+                    }
+                case 2:
+                    {
 
-                        
-                       
 
-                        for(int i = 0; i<28; i++)
+
+
+                        for (int i = 0; i < 28; i++)
                         {
 
                             Int32 acc = (Int32)Output[i] + (((((Int32)OldSample * 115) - ((Int32)OlderSample * 52)) + 32) / 64);
@@ -97,11 +99,12 @@ namespace backend.Converters
                         }
 
                         break;
-                }
-                case 3:{
+                    }
+                case 3:
+                    {
 
-                        
-                       
+
+
 
                         for (int i = 0; i < 28; i++)
                         {
@@ -115,11 +118,12 @@ namespace backend.Converters
                         }
 
                         break;
-                }
-                case 4:{
+                    }
+                case 4:
+                    {
 
-                        
-                      
+
+
 
                         for (int i = 0; i < 28; i++)
                         {
@@ -133,15 +137,16 @@ namespace backend.Converters
                         }
 
                         break;
-                }
-                default:{
+                    }
+                default:
+                    {
 
                         OlderSample = Output[26];
                         OldSample = Output[27];
-      
+
 
                         break;
-                }
+                    }
 
 
             }
@@ -164,18 +169,18 @@ namespace backend.Converters
             Int16 wo = 0;
             Int16 woo = 0;
 
-            for (int i = 0;i<13; i++)
+            for (int i = 0; i < 13; i++)
             {
 
                 Int16[] shifted = (Int16[])diff.Clone();
 
-                
+
                 shifted = ShiftBlockDown(shifted, (byte)i);
                 shifted = ShiftBlockUp(shifted, (byte)i);
-                
 
 
-                for (int j = 0; j<5; j++)
+
+                for (int j = 0; j < 5; j++)
                 {
                     Int16[] filtered = (Int16[])shifted.Clone();
                     OldSample = o;
@@ -183,7 +188,7 @@ namespace backend.Converters
                     filtered = FilterBlock(filtered, (byte)j);
 
                     double dist = GetBlockDistance(Original, filtered);
-                    if(dist<distance)
+                    if (dist < distance)
                     {
                         distance = dist;
                         sh = i;
@@ -216,9 +221,9 @@ namespace backend.Converters
 
             List<Int16> tSamplesOriginal = tSamples.ToList();
 
-                          
+
             tSamples[0] -= OldSample;
-            
+
 
             for (int i = 1; i < 28; i++)
             {
@@ -236,19 +241,19 @@ namespace backend.Converters
 
             block.Shift_Filter = GetShiftFilter(tSamplesOriginal.ToArray(), tSamples.ToArray());
 
-            block.Flags = (byte)(looping? 0x2 : 0x0);
+            block.Flags = (byte)(looping ? 0x2 : 0x0);
 
-            if (this.Output?.BlockCountPerChannel>0 && blockID%this.Output?.BlockCountPerChannel==0)
+            if (this.Output?.BlockCountPerChannel > 0 && blockID % this.Output?.BlockCountPerChannel == 0)
             {
-                block.Flags|= (byte)(0x4);
+                block.Flags |= (byte)(0x4);
             }
 
-            if(this.Output?.BlockCountPerChannel>0 && blockID%this.Output?.BlockCountPerChannel == (this.Output?.BlockCountPerChannel - 1))
+            if (this.Output?.BlockCountPerChannel > 0 && blockID % this.Output?.BlockCountPerChannel == (this.Output?.BlockCountPerChannel - 1))
             {
                 block.Flags |= (byte)(0x1);
             }
 
-           
+
             byte exp = (byte)(12 - (block.Shift_Filter & 0x0F));
 
             Int16[] q = ShiftBlockDown(tSamples.ToArray(), exp);
@@ -257,8 +262,8 @@ namespace backend.Converters
 
             for (int i = 0; i < 28; i += 2)
             {
-                byte lo = (byte)(q[i] & 0x0F);   
-                byte hi = (byte)(q[i + 1] & 0x0F);   
+                byte lo = (byte)(q[i] & 0x0F);
+                byte hi = (byte)(q[i + 1] & 0x0F);
 
                 block.Samples.Add((byte)((hi << 4) | lo));
             }
@@ -268,24 +273,24 @@ namespace backend.Converters
 
         public int AddDummyBlocks(bool looping)
         {
-            int n = this.Output?.BlockCountPerChannel ?? 0;
+            int n = (int)(this.Output?.BlockCountPerChannel ?? 0);
             int output = (4 - (n & 0x3)) & 0x3;
 
-            if (output==0 && !looping) { output = 4; }
+            if (output == 0 && !looping) { output = 4; }
 
-            for (int i = 0; i< output; i++)
+            for (int i = 0; i < output; i++)
             {
                 ADPCMBlock block = new();
                 block.Shift_Filter = 0;
 
                 block.Samples = new List<byte> { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-                
+
                 block.Flags = 0x2;
 
                 if (i == 0) { block.Flags |= 0x4; }
 
-                if (i == output - 1) {  block.Flags |= 0x1; }
-                
+                if (i == output - 1) { block.Flags |= 0x1; }
+
                 this?.Output?.Data?.Add(block);
 
             }
@@ -304,7 +309,8 @@ namespace backend.Converters
 
         }
 
-        public override async Task Convert(DarkforgeDBContext ctx) { 
+        public override async Task Convert(DarkforgeDBContext ctx)
+        {
 
             this.Sound = await ctx.WAVs.Where(w => w.Hash == this.Input!.SoundHash).FirstAsync();
 
@@ -313,8 +319,8 @@ namespace backend.Converters
             {
                 int padding = (this.Input!.ChannelCount * 28) - remainingSamples;
                 this.Sound.Data.AddRange(Enumerable.Repeat((Int16)0, padding));
-                
-            }          
+
+            }
 
 
             if (this.Sound.ChannelCount > 1)
@@ -344,14 +350,13 @@ namespace backend.Converters
 
             this.Output.SampleRate = (UInt16)this.Sound.SampleRate;
 
-            this.Output.SerializedSampleRate = (Int16)(this.Sound.SampleRate);
 
             this.Output.ThresholdBits = this.Input.ThresholdBits;
 
             this.Output.ChannelCount = this.Input.ChannelCount;
 
 
-            this.Output.BlockCountPerChannel = this.Sound!.Data!.Count / (Int32)(this.Output.ChannelCount * 28);
+            this.Output.BlockCountPerChannel = (UInt32)(this.Sound!.Data!.Count / (Int32)(this.Output.ChannelCount * 28));
 
             int add = 0;
 
@@ -362,23 +367,23 @@ namespace backend.Converters
 
                 for (int j = 0; j < this.Output.BlockCountPerChannel; j++)
                 {
-                    EncodeBlock((i * this.Output.BlockCountPerChannel) + j, this.Input.Looping);
+                    EncodeBlock((int)(i * this.Output.BlockCountPerChannel) + j, this.Input.Looping);
                 }
 
                 add = AddDummyBlocks(this.Input.Looping);
             }
 
-            this.Output.BlockCountPerChannel += add;
+            this.Output.BlockCountPerChannel += (UInt32)add;
 
             this.Output.Serialize();
 
 
-            await ctx.WLs.AddAsync(this.Output);            
+            await ctx.WLs.AddAsync(this.Output);
 
             await ctx.SaveChangesAsync();
 
 
-          
+
         }
 
     }

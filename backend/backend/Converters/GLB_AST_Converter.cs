@@ -231,7 +231,7 @@ namespace backend.Converters
 
                             ANM anim = new();
 
-                            anim.FKR_ID = (int)this.Output.FKR_ID!;
+                            anim.FKR_ID = (long)this.Output.FKR_ID!;
 
                             await ctx.ANMs.AddAsync(anim);
 

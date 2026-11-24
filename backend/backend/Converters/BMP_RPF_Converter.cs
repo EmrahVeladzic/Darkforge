@@ -24,7 +24,7 @@ namespace backend.Converters
     }
 
 
-    public class IMG_DATA :BaseConverter
+    public class IMG_DATA : BaseConverter
     {
 
         public bool AlphaUsed { get; set; }
@@ -35,18 +35,18 @@ namespace backend.Converters
 
         private List<Occurence_Entry>? Occurence_Table { get; set; }
 
-        private List<Swap_Entry>? Swap_Table { get; set;}
+        private List<Swap_Entry>? Swap_Table { get; set; }
 
-        public BMP? Image {  get; set; }
+        public BMP? Image { get; set; }
 
         public RPF? Output { get; set; }
 
         private UInt32 UniqueCount { get; set; }
         private UInt32 MaxUniqueCount { get; set; }
-            
+
         public byte Shift_Value { get; set; }
 
-  
+
 
         static Vector3 GetHue(Pixel15 input)
         {
@@ -91,25 +91,26 @@ namespace backend.Converters
 
         bool EnsureSingle(Pixel15 a, Pixel15 b)
         {
-            if (Alpha15 != null && (a.Equals(Alpha15) || b.Equals(Alpha15))) {
+            if (Alpha15 != null && (a.Equals(Alpha15) || b.Equals(Alpha15)))
+            {
                 return false;
-            }               
+            }
 
-            return !(a.Data==b.Data);
-            
+            return !(a.Data == b.Data);
+
         }
 
         bool EnsureDual(Pixel15 a, Pixel15 b)
         {
             bool output = EnsureSingle(a, b);
 
-          
+
             if (output)
             {
                 Vector3 vA = GetHue(a);
                 Vector3 vB = GetHue(b);
 
-                if(vA != vB)
+                if (vA != vB)
                 {
 
                     output = false;
@@ -141,33 +142,33 @@ namespace backend.Converters
 
 
 
-            List<Swap_Entry> toUpdate = this.Swap_Table!.Where(swa=>swa.Donor!.Equals(recipient)).ToList();
-                       
-           
-            foreach(Swap_Entry s in toUpdate)
+            List<Swap_Entry> toUpdate = this.Swap_Table!.Where(swa => swa.Donor!.Equals(recipient)).ToList();
+
+
+            foreach (Swap_Entry s in toUpdate)
             {
                 s.Donor = donor;
             }
-            
+
 
             Swap_Table!.Add(sw);
 
-            Occurence_Entry ocR = Occurence_Table!.Where(o=>o.Value!.Data==recipient.Data).First();
+            Occurence_Entry ocR = Occurence_Table!.Where(o => o.Value!.Data == recipient.Data).First();
 
             Occurence_Entry ocD = Occurence_Table!.Where(o => o.Value!.Data == donor.Data).First();
 
             ocD.Occurence += ocR.Occurence;
 
-            ocR.Occurence = 0;                              
+            ocR.Occurence = 0;
 
 
-            Occurence_Table = Occurence_Table!.OrderBy(o=>o.Occurence).ToList();
+            Occurence_Table = Occurence_Table!.OrderBy(o => o.Occurence).ToList();
 
             UniqueCount--;
 
         }
 
-        void PopularityCompression( int index)
+        void PopularityCompression(int index)
         {
 
             Vector3 PotentialRecipient = new();
@@ -184,7 +185,7 @@ namespace backend.Converters
 
             int chosen = 0;
 
-            for (int i = (int)(MaxUniqueCount-UniqueCount); i< (int)MaxUniqueCount ; i++)
+            for (int i = (int)(MaxUniqueCount - UniqueCount); i < (int)MaxUniqueCount; i++)
             {
                 compare = Occurence_Table![i].Value!;
 
@@ -194,7 +195,7 @@ namespace backend.Converters
 
                 double newDistance = Vector3.Distance(PotentialDonor, PotentialRecipient);
 
-                if(newDistance < Distance && EnsureSingle(initial, compare))
+                if (newDistance < Distance && EnsureSingle(initial, compare))
                 {
                     Distance = newDistance;
                     chosen = i;
@@ -204,8 +205,8 @@ namespace backend.Converters
             }
             compare = Occurence_Table![chosen].Value!;
 
-            NewSwap(compare,initial);
-            
+            NewSwap(compare, initial);
+
 
         }
 
@@ -214,7 +215,7 @@ namespace backend.Converters
             int chosen_a = 0;
             int chosen_b = 0;
 
-            Pixel15 initial = Occurence_Table! [0].Value!;
+            Pixel15 initial = Occurence_Table![0].Value!;
             Pixel15 compare = initial;
 
             Vector3 PotentialRecipient = new();
@@ -228,7 +229,7 @@ namespace backend.Converters
             {
 
                 Distance = double.PositiveInfinity;
-             
+
 
                 for (int j = (int)(MaxUniqueCount - UniqueCount); j < (int)MaxUniqueCount; j++)
                 {
@@ -253,7 +254,7 @@ namespace backend.Converters
 
 
 
-                        if (newDistance < Distance && ((i==0 && EnsureDual(initial, compare))||(i==1&&EnsureSingle(initial,compare))))
+                        if (newDistance < Distance && ((i == 0 && EnsureDual(initial, compare)) || (i == 1 && EnsureSingle(initial, compare))))
                         {
                             Distance = newDistance;
                             chosen_a = j;
@@ -271,7 +272,8 @@ namespace backend.Converters
             initial = Occurence_Table![chosen_a].Value!;
             compare = Occurence_Table![chosen_b].Value!;
 
-            if(EnsureDual(initial, compare)) {
+            if (EnsureDual(initial, compare))
+            {
 
                 Vector3 Saturation = GetHue(initial);
 
@@ -283,28 +285,28 @@ namespace backend.Converters
                 PotentialDonor.Y = (float)compare.Green();
                 PotentialDonor.Z = (float)compare.Blue();
 
-                Distance = Vector3.Distance(Saturation,PotentialRecipient);
+                Distance = Vector3.Distance(Saturation, PotentialRecipient);
                 newDistance = Vector3.Distance(Saturation, PotentialRecipient);
 
-             
 
-                    if (Distance < newDistance)
-                    {
-                        Occurence_Table[chosen_a].Occurence += Occurence_Table[chosen_b].Occurence;
-                        Occurence_Table[chosen_b].Occurence = 0;
-                        NewSwap(initial, compare);
-                       
-                    }
-                    else
-                    {
-                        Occurence_Table[chosen_b].Occurence += Occurence_Table[chosen_a].Occurence;
-                        Occurence_Table[chosen_a].Occurence = 0;
-                        NewSwap(compare, initial);
-                      
 
-                    }
+                if (Distance < newDistance)
+                {
+                    Occurence_Table[chosen_a].Occurence += Occurence_Table[chosen_b].Occurence;
+                    Occurence_Table[chosen_b].Occurence = 0;
+                    NewSwap(initial, compare);
 
-                
+                }
+                else
+                {
+                    Occurence_Table[chosen_b].Occurence += Occurence_Table[chosen_a].Occurence;
+                    Occurence_Table[chosen_a].Occurence = 0;
+                    NewSwap(compare, initial);
+
+
+                }
+
+
 
             }
 
@@ -312,23 +314,23 @@ namespace backend.Converters
             {
 
 
-                    if (Occurence_Table[chosen_a].Occurence > Occurence_Table[chosen_b].Occurence)
-                    {
-                        Occurence_Table[chosen_a].Occurence += Occurence_Table[chosen_b].Occurence;
-                        Occurence_Table[chosen_b].Occurence = 0;
-                        NewSwap(initial, compare);
-                  
-                    }
-                    else
-                    {
-                        Occurence_Table[chosen_b].Occurence += Occurence_Table[chosen_a].Occurence;
-                        Occurence_Table[chosen_a].Occurence = 0;
-                        NewSwap(compare, initial);
-                
+                if (Occurence_Table[chosen_a].Occurence > Occurence_Table[chosen_b].Occurence)
+                {
+                    Occurence_Table[chosen_a].Occurence += Occurence_Table[chosen_b].Occurence;
+                    Occurence_Table[chosen_b].Occurence = 0;
+                    NewSwap(initial, compare);
 
-                    }
+                }
+                else
+                {
+                    Occurence_Table[chosen_b].Occurence += Occurence_Table[chosen_a].Occurence;
+                    Occurence_Table[chosen_a].Occurence = 0;
+                    NewSwap(compare, initial);
 
-                
+
+                }
+
+
             }
 
         }
@@ -338,7 +340,7 @@ namespace backend.Converters
             if (this.Output!.PLT!.Data!.Count > 16)
             {
                 return (byte)0;
-            }           
+            }
             else
             {
                 return (byte)4;
@@ -350,28 +352,28 @@ namespace backend.Converters
         {
             Pixel15? Search = Alpha15;
 
-            
+
 
             foreach (Swap_Entry sw in this.Swap_Table!)
             {
                 if (Value.Equals(sw.Donor!))
                 {
-                    
+
                     Search = Value; break;
 
                 }
 
                 else if (Value.Equals(sw.Recipient!))
                 {
-                    
+
                     Search = sw.Donor!; break;
                 }
-               
+
 
             }
 
 
-            return (byte)this.Output!.PLT!.Data!.FindIndex(pxl=>pxl.Equals(Search!));
+            return (byte)this.Output!.PLT!.Data!.FindIndex(pxl => pxl.Equals(Search!));
         }
 
         public IMG_DATA() { }
@@ -383,22 +385,23 @@ namespace backend.Converters
 
         }
 
-        public override async Task Convert(DarkforgeDBContext ctx) { 
+        public override async Task Convert(DarkforgeDBContext ctx)
+        {
 
 
             this.Image = await ctx.BMPs.Where(b => b.Hash == this.Input!.ImageHash).FirstAsync();
 
-           
+
 
             if (this.Input!.Alpha != null)
             {
                 this.Alpha = new Pixel24((byte)this.Input.Alpha[0], (byte)this.Input.Alpha[1], (byte)this.Input.Alpha[2]);
 
-                this.Alpha15 = new Pixel15(this.Alpha,false);               
-               
+                this.Alpha15 = new Pixel15(this.Alpha, false);
+
             }
 
-           
+
 
             this.Occurence_Table = new();
             this.Swap_Table = new();
@@ -407,11 +410,11 @@ namespace backend.Converters
             {
                 bool new_clr = true;
 
-                Pixel15 val = new(p,!p.Equals(this.Alpha!));
+                Pixel15 val = new(p, !p.Equals(this.Alpha!));
 
                 foreach (Occurence_Entry oe in this.Occurence_Table)
                 {
-                    if(val.Data==oe.Value!.Data)
+                    if (val.Data == oe.Value!.Data)
                     {
                         new_clr = false;
                     }
@@ -424,18 +427,18 @@ namespace backend.Converters
 
                 else
                 {
-                    Occurence_Entry occ = this.Occurence_Table.Where(o=>o.Value!.Data==val!.Data).First();
+                    Occurence_Entry occ = this.Occurence_Table.Where(o => o.Value!.Data == val!.Data).First();
                     occ.Occurence++;
                 }
             }
 
-            this.Occurence_Table=this.Occurence_Table!.OrderBy(o=>o.Occurence).ToList();
+            this.Occurence_Table = this.Occurence_Table!.OrderBy(o => o.Occurence).ToList();
 
             this.MaxUniqueCount = (uint)this.Occurence_Table.Count;
             this.UniqueCount = this.MaxUniqueCount;
 
-                       
-            
+
+
             if (this.UniqueCount > ((uint)this.Input.CLUT_Size + 1))
             {
 
@@ -472,7 +475,7 @@ namespace backend.Converters
                         }
 
                     }
-                                       
+
 
 
                 }
@@ -507,7 +510,7 @@ namespace backend.Converters
                     {
                         this.Output.PLT.Data[i].Data = 0x0000;
                         break;
-                    }                  
+                    }
 
                 }
 
@@ -518,19 +521,19 @@ namespace backend.Converters
 
             this.Output.Serialize(this);
 
-            this.Output.Width=(byte)(this.Image.Width-1);
+            this.Output.Width = (byte)(this.Image.Width - 1);
             this.Output.Height = (byte)(this.Image.Height - 1);
 
-            this.Output.CLUT = (byte)(this.Output.PLT.Data.Count-1);
+            this.Output.CLUT = (byte)(this.Output.PLT.Data.Count - 1);
 
-            
-            
+
+
             this.Output.TexRow = this.Input.TexRow;
-            this.Output.TexX = (Int16)this.Input.Tex_X;
+            this.Output.TexX = this.Input.Tex_X;
             this.Output.TexY = this.Input.Tex_Y;
 
             this.Output.CLUTRow = this.Input.CLUTRow;
-            this.Output.CLUTX = (Int16)this.Input.CLUT_X;
+            this.Output.CLUTX = this.Input.CLUT_X;
             this.Output.CLUTY = this.Input.CLUT_Y;
 
             this.AlphaUsed = false;
@@ -541,7 +544,7 @@ namespace backend.Converters
                     this.AlphaUsed = true;
                 }
             }
-            
+
 
 
 
@@ -549,7 +552,7 @@ namespace backend.Converters
             await ctx.PGAs.AddAsync(this.Output.PGA);
             await ctx.SaveChangesAsync();
 
-            this.Output.PLT_ID = this.Output.PLT.ID;  
+            this.Output.PLT_ID = this.Output.PLT.ID;
             this.Output.PGA_ID = this.Output.PGA.ID;
 
 
@@ -558,11 +561,11 @@ namespace backend.Converters
 
             this.Occurence_Table?.Clear();
             this.Swap_Table?.Clear();
-                     
+
 
         }
 
-        
+
     }
 
 }

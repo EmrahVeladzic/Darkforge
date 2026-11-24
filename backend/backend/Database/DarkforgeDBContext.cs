@@ -10,6 +10,10 @@ namespace backend.Database
     public class DarkforgeDBContext : DbContext
     {
 
+        public static readonly string DBPath = Path.Combine(AppContext.BaseDirectory, "darkforge.db");
+
+        public static readonly string ConnectionString = "Data Source=" + DBPath;
+
         private readonly IConfiguration Configuration;
 
         public DarkforgeDBContext(DbContextOptions<DarkforgeDBContext> options, IConfiguration configuration) : base(options)
@@ -27,7 +31,7 @@ namespace backend.Database
         {
             if (!optionsBuilder.IsConfigured)
             {
-                optionsBuilder.UseSqlServer(Configuration.GetConnectionString("Default Connection"));
+                optionsBuilder.UseSqlite(ConnectionString);
             }
         }
         public DbSet<BMP> BMPs { get; set; }
