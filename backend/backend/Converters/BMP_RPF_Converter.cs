@@ -521,10 +521,10 @@ namespace backend.Converters
 
             this.Output.Serialize(this);
 
-            this.Output.Width = (byte)(this.Image.Width - 1);
-            this.Output.Height = (byte)(this.Image.Height - 1);
+            this.Output.Width = (UInt16)(this.Image.Width/this.Input.Frames);
+            this.Output.Height = (UInt16)(this.Image.Height/this.Input.Frames);
 
-            this.Output.CLUT = (byte)(this.Output.PLT.Data.Count - 1);
+            this.Output.CLUT = (UInt16)this.Output.PLT.Data.Count;
 
 
 

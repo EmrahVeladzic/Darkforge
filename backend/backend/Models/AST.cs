@@ -109,12 +109,18 @@ namespace backend.Models
             {
                 temp.Add(this.MDL.OffsetX);
                 temp.Add(this.MDL.OffsetY);
-                temp.Add(this.MDL.Width);
-                temp.Add(this.MDL.Height);
+                PrimitiveSerialization.SerializePrimitive(this.MDL.Width, temp);
+                PrimitiveSerialization.SerializePrimitive(this.MDL.Height, temp);
+                temp.Add(0);
+                temp.Add(0);
             }
 
             else
             {
+                temp.Add(0);
+                temp.Add(0);
+                temp.Add(0);
+                temp.Add(0);
                 temp.Add(0);
                 temp.Add(0);
                 temp.Add(0);

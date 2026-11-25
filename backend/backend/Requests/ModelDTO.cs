@@ -17,9 +17,9 @@ namespace backend.Requests
         //Framerate of the target platform
         public byte TargetFPS { get; set; }
 
-        //Target texture dimensions. +1, as 0 is not valid.
-        public byte TexWidth { get; set; }
-        public byte TexHeight { get; set; }
+
+        public UInt16 TexWidth { get; set; }
+        public UInt16 TexHeight { get; set; }
 
         public byte TexOffsetX { get; set; }
         public byte TexOffsetY { get; set; }

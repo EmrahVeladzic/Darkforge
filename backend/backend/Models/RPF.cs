@@ -14,9 +14,8 @@ namespace backend.Models
         //The top-level image format. The foreign keys are converted to element offsets.
 
 
-        //Size of lookup table (+1, as 0 is not a valid amount)
         [Column("CLUT")]
-        public byte CLUT { get; set; }
+        public UInt16 CLUT { get; set; }
 
 
         [Column("PLTID")]
@@ -35,13 +34,13 @@ namespace backend.Models
         public virtual PGA? PGA { get; set; }
 
 
-        //Width (+1, as values will range 2-256)
-        [Column("Width")]
-        public byte Width { get; set; }
 
-        //Height (+1, as values will range 2-256). The product of width and height, relative to CLUT size will give the correct number of bytes to load
+        [Column("Width")]
+        public UInt16 Width { get; set; }
+
+
         [Column("Height")]
-        public byte Height { get; set; }
+        public UInt16 Height { get; set; }
 
         [Column("TexRow")]
         public bool TexRow { get; set; }
@@ -62,6 +61,9 @@ namespace backend.Models
 
         [Column("CLUTY")]
         public byte CLUTY { get; set; }
+
+        [Column("FrameStruct")]
+        public byte FrameStruct { get; set; }
 
         public RPF() : base()
         {
@@ -128,9 +130,10 @@ namespace backend.Models
                                     | (int)((clut_line & 0x01FF) << 6));
 
             temp.Add(82);
-            temp.Add(this.Width);
-            temp.Add(this.Height);
-            temp.Add(this.CLUT);
+            temp.Add(FrameStruct);
+            PrimitiveSerialization.SerializePrimitive(this.Width, temp);
+            PrimitiveSerialization.SerializePrimitive(this.Height, temp);
+            PrimitiveSerialization.SerializePrimitive(this.CLUT, temp);
 
             PrimitiveSerialization.SerializePrimitive(dest_tex, temp);
             PrimitiveSerialization.SerializePrimitive(size_tex, temp);

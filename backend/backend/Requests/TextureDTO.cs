@@ -3,12 +3,10 @@
     public class TextureDTO
     {
 
-        //CLUT size per frame. +1, as 0 is not valid. 
-        public byte Colours { get; set; }
+        public UInt16 Colours { get; set; }
 
-        //Dimensions. +1, as 0 is not valid.
-        public byte Width { get; set; }
-        public byte Height { get; set; }
+        public UInt16 Width { get; set; }
+        public UInt16 Height { get; set; }
 
         //CLUT. 
         public List<UInt16>? CLUT { get; set; }
@@ -27,6 +25,9 @@
         public UInt16 CLUT_X { get; set; }
         public byte CLUT_Y { get; set; }
 
+
+        public byte Frames { get; set; }
+        public byte FrameInterval { get; set; }
 
     }
 }

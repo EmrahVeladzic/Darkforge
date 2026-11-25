@@ -26,13 +26,13 @@ namespace backend.Models
             this.Serialized = this.ToSerialize!.ToArray();
         }
 
-        public void Deserialize(byte Width, byte Height, byte x_off, byte y_off)
+        public void Deserialize(UInt16 Width, UInt16 Height, byte x_off, byte y_off)
         {
             this.TextureCoordinates = this.Serialized!.ToList();
             for (int i = 0; i < TextureCoordinates.Count; i += 2)
             {
-                this.TextureCoordinates[i] = (byte)Math.Min(x_off + ((this.TextureCoordinates[i] * (Width + 1)) + 127) / 255, 255);
-                this.TextureCoordinates[i + 1] = (byte)Math.Min(y_off + ((this.TextureCoordinates[i + 1] * (Height + 1)) + 127) / 255, 255);
+                this.TextureCoordinates[i] = (byte)Math.Min(x_off + ((this.TextureCoordinates[i] * Width) + 127) / 255, 255);
+                this.TextureCoordinates[i + 1] = (byte)Math.Min(y_off + ((this.TextureCoordinates[i + 1] * Height) + 127) / 255, 255);
             }
 
         }

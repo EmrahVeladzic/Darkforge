@@ -14,14 +14,15 @@ export class ImageDTO{
     public clutRow : boolean;
     public cluT_X : number;
     public cluT_Y : number;
+    public frames : number;
+    public frameInterval : number;
 
 
-
-    constructor(data:string, clut_size : number, alpha_c : number[]|null, c_mode : boolean,trow:number,tx:number,ty:number,crow:number,cx:number,cy:number ,hash:string) {
+    constructor(data:string, clut_size : number, alpha_c : number[]|null, c_mode : boolean,trow:number,tx:number,ty:number,crow:number,cx:number,cy:number ,hash:string, f:number, fi:number) {
         this.imageData=data;
         this.imageHash=hash;
 
-        this.cluT_Size = clut_size-1;
+        this.cluT_Size = clut_size;
         this.alpha = alpha_c;
         this.mode = c_mode;
 
@@ -33,11 +34,14 @@ export class ImageDTO{
         this.cluT_X = cx;
         this.cluT_Y = cy;
 
+        this.frames = f;
+        this.frameInterval = fi;
+
     }
 
-    static async create(data: string, clut_size: number, alpha_c: number[] | null, c_mode: boolean, trow:number,tx:number,ty:number,crow:number,cx:number,cy:number): Promise<ImageDTO> {
+    static async create(data: string, clut_size: number, alpha_c: number[] | null, c_mode: boolean, trow:number,tx:number,ty:number,crow:number,cx:number,cy:number, f:number, fs:number): Promise<ImageDTO> {
         const imageHash = await hash_data(data);
-        return new ImageDTO(data, clut_size, alpha_c, c_mode,trow,tx,ty,crow,cx,cy,imageHash);
+        return new ImageDTO(data, clut_size, alpha_c, c_mode,trow,tx,ty,crow,cx,cy,imageHash, f, fs);
     }
 
 }
@@ -83,8 +87,8 @@ export class ModelDTO{
         this.modelData=data;
         this.precisionBits=precision;
         this.targetFPS=fps;
-        this.texWidth=width-1;
-        this.texHeight=height-1;
+        this.texWidth=width;
+        this.texHeight=height;
         this.modelHash=hash;
         this.texOffsetX = tox;
         this.texOffsetY = toy;
@@ -120,7 +124,10 @@ export class TextureDTO{
     public cluT_X : number;
     public cluT_Y : number;
 
-    constructor(col:number,w:number,h:number,rpf:number,clut:number[],pxl:number[], trow:boolean,tx:number,ty:number,crow:boolean,cx:number,cy:number) {
+    public frames : number;
+    public frameInterval : number;
+
+    constructor(col:number,w:number,h:number,rpf:number,clut:number[],pxl:number[], trow:boolean,tx:number,ty:number,crow:boolean,cx:number,cy:number, f:number, fi:number) {
         this.colours=col;
         this.width=w;
         this.height=h;
@@ -133,6 +140,8 @@ export class TextureDTO{
         this.clutRow = crow;
         this.cluT_X = cx;
         this.cluT_Y = cy;
+        this.frames = f;
+        this.frameInterval = fi;
     }
 
 

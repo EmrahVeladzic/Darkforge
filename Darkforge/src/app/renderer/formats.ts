@@ -36,8 +36,8 @@ export class Texture{
         }      
 
         this.Indices=pixels;
-        this.Width=width+1;
-        this.Height=height+1;
+        this.Width=width;
+        this.Height=height;
 
         let bpi = get_bits_per_index(this.CLUT.length);
         let data_length_mult = (8/bpi);
@@ -384,9 +384,6 @@ export class Asset{
         this.precisionBits=p;
 
         if(m!=null){
-
-            m.width++;
-            m.height++
 
             for(let msh of m.meshes){
 

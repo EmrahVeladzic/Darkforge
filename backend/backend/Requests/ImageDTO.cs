@@ -11,8 +11,7 @@ namespace backend.Requests
         //SHA-256 Encoded.
         public string? ImageHash { get; set; }
 
-        //Bits per pixel. Add 1 to this value.
-        public byte CLUT_Size { get; set; }
+        public UInt16 CLUT_Size { get; set; }
 
         //If not NULL, use this colour as the designated alpha = 0. Format = 24-bit RGB.
         public List<byte>? Alpha { get; set; }
@@ -28,6 +27,9 @@ namespace backend.Requests
         public bool CLUTRow { get; set; }
         public UInt16 CLUT_X { get; set; }
         public byte CLUT_Y { get; set; }
+
+        public byte Frames { get; set;  }
+        public byte FrameInterval { get; set; }
     }
 
 }

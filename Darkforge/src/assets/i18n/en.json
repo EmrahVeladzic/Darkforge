@@ -27,7 +27,8 @@
     "tex_placement":"Texture VRAM half / X / Y:",
     "clut_placement":"CLUT VRAM half / X / Y:",
     "loop":"Loop:",
-    "differential":"Differential threshold bits:"
+    "differential":"Differential threshold bits:",
+    "frames":"Frames / ticks per frame:"
 },
 "option":{
     "anim-none":"-NONE-",

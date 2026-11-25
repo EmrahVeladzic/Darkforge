@@ -7,7 +7,7 @@ namespace backend.Logging
     public class ActiveRPF: BaseLogEntity
     {
         [Column("CLUTSize")]
-        public byte CLUT {  get; set; }
+        public UInt16 CLUT {  get; set; }
 
         [Column("RAlpha")]
         public byte? Red {  get; set; }
@@ -23,6 +23,9 @@ namespace backend.Logging
 
         [Column("CompressionMode")]
         public bool Method {  get; set; }
+
+        [Column("Frames")]
+        public byte Frames { get; set; }
 
     }
 }

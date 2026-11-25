@@ -9,10 +9,10 @@ namespace backend.Models
         public List<MSH> Meshes { get; set; }
 
         [Column("TargetTextureWidth")]
-        public byte Width { get; set; }
+        public UInt16 Width { get; set; }
 
         [Column("TargetTextureHeight")]
-        public byte Height { get; set; }
+        public UInt16 Height { get; set; }
 
         [Column("TargetTextureOffsetX")]
         public byte OffsetX { get; set; }

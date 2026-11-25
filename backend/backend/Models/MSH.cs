@@ -58,7 +58,7 @@ namespace backend.Models
             this.NRM?.Serialize();
         }
 
-        public void Deserialize(byte Width, byte Height, byte x_off, byte y_off)
+        public void Deserialize(UInt16 Width, UInt16 Height, byte x_off, byte y_off)
         {
             this.VT?.Deserialize();
             this.IND?.Deserialize();

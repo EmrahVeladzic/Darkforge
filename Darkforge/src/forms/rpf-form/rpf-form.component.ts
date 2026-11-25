@@ -32,6 +32,7 @@ export class RpfFormComponent implements OnInit{
   private destroy$ = new Subject<void>();
 
   private tex_x_last : number = 0;
+  private interval_last : number = 1;
 
   public btn_enabled:boolean=true;
   public post_delete:boolean=true;
@@ -44,6 +45,8 @@ export class RpfFormComponent implements OnInit{
   @ViewChild('tx',{static:false})tex_x!:NumericComponent;
   @ViewChild('ty',{static:false})tex_y!:NumericComponent;
   @ViewChild('cx',{static:false})clut_x!:NumericComponent;
+  @ViewChild('cy',{static:false})clut_y!:NumericComponent;
+  @ViewChild('fr',{static:false})frames_n!:NumericComponent;
 
   constructor(public translate: TranslateService){
     this.form = new FormGroup({
@@ -63,6 +66,8 @@ export class RpfFormComponent implements OnInit{
       clut_row : new FormControl(0,[Validators.min(0),Validators.max(1),Validators.required]),
       clut_x : new FormControl(0,[Validators.min(0),Validators.max(1008),Validators.required]),
       clut_y : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
+      frames : new FormControl(1,[Validators.min(1),Validators.max(16),Validators.required]),
+      interval : new FormControl(1,[Validators.min(1),Validators.max(32),Validators.required]),
     });
   }
 
@@ -72,6 +77,28 @@ export class RpfFormComponent implements OnInit{
 
   private set_field(name:string, v:number){
     this.form.get(name)?.setValue(v,{emitEvent:false});
+  }
+
+  private frame_limit(width:number):number{
+    return Math.max(1,Math.min(16,Math.floor(width/16)));
+  }
+
+  private snap_interval(wanted:number, up:boolean):number{
+
+    let p = 1;
+
+    if(up){
+      while(p<wanted&&p<32){
+        p<<=1;
+      }
+    }
+    else{
+      while((p<<1)<=wanted&&p<32){
+        p<<=1;
+      }
+    }
+
+    return p;
   }
 
   update_limits(){
@@ -84,7 +111,21 @@ export class RpfFormComponent implements OnInit{
 
     const divisor = (value>16)?2:4;
 
-    const hw_width = Math.ceil(this.preview!.width/divisor);
+    const width = this.preview!.width;
+
+    const frame_max = this.frame_limit(width);
+    const frames = Math.min(Math.max(this.field_value('frames'),1),frame_max);
+
+    this.frames_n.max = frame_max;
+    this.set_field('frames',frames);
+
+    const wanted_ticks = this.field_value('interval');
+    const ticks = (frames>1)?this.snap_interval(wanted_ticks,wanted_ticks>this.interval_last):1;
+
+    this.set_field('interval',ticks);
+    this.interval_last=ticks;
+
+    const hw_width = Math.ceil((width/frames)/divisor);
 
     const tx_max = Math.floor((1024-hw_width)/16)*16;
     this.tex_x.max = tx_max;
@@ -114,6 +155,10 @@ export class RpfFormComponent implements OnInit{
     const cx_max = 1024-((value>16)?256:16);
     this.clut_x.max = cx_max;
     this.set_field('clut_x',Math.min(this.field_value('clut_x'),cx_max));
+
+    const cy_max = 256-frames;
+    this.clut_y.max = cy_max;
+    this.set_field('clut_y',Math.min(this.field_value('clut_y'),cy_max));
 
   }
 
@@ -167,6 +212,18 @@ export class RpfFormComponent implements OnInit{
 
     });
 
+    this.form.get('frames')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
+
+      this.update_limits();
+
+    });
+
+    this.form.get('interval')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
+
+      this.update_limits();
+
+    });
+
     this.form.get('use_alpha')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
       if(value){
         this.r_s.sliderDimensionReset();
@@ -212,7 +269,10 @@ export class RpfFormComponent implements OnInit{
 
     let CHK = this.form.get('use_alpha')?.value;
 
-    const $instance = await ImageDTO.create(this.transfer.file_text!,parseInt(CLUT_size),(CHK)?[parseInt(r_out),parseInt(g_out),parseInt(b_out)]:null,(mode_slc),trow,tx,ty,crow,cx,cy);
+    let frames = this.field_value('frames');
+    let shift = (frames>1)?Math.round(Math.log2(this.field_value('interval'))):0;
+
+    const $instance = await ImageDTO.create(this.transfer.file_text!,parseInt(CLUT_size),(CHK)?[parseInt(r_out),parseInt(g_out),parseInt(b_out)]:null,(mode_slc),trow,tx,ty,crow,cx,cy,frames,shift);
 
     return $instance;
 

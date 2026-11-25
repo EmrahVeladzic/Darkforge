@@ -120,7 +120,19 @@
                     <app-numeric id="C_X" #cx [max]="1008" [min]="0" [default]="0" [step]="16" formControlName="clut_x"></app-numeric>
                 </div>
                 <div class="vram_holder_third" id="CLUT_Y">
-                    <app-numeric id="C_Y" [max]="255" [min]="0" [default]="0" [step]="1" formControlName="clut_y"></app-numeric>
+                    <app-numeric id="C_Y" #cy [max]="255" [min]="0" [default]="0" [step]="1" formControlName="clut_y"></app-numeric>
+                </div>
+            </div>
+
+            <div class="vram_holder_row">
+                <label>{{'label.frames'|translate}}</label>
+            </div>
+            <div class="vram_holder_row">
+                <div class="vram_holder_input" id="FRAMES">
+                    <app-numeric id="F_COUNT" #fr [max]="16" [min]="1" [default]="1" [step]="1" formControlName="frames"></app-numeric>
+                </div>
+                <div class="vram_holder_input" id="INTERVAL">
+                    <app-numeric id="F_SHIFT" #iv [max]="32" [min]="1" [default]="1" [step]="1" formControlName="interval"></app-numeric>
                 </div>
             </div>
 
