@@ -30,7 +30,7 @@ namespace backend.Controllers
                 byte? alpha_g = (input.Alpha != null && input.Alpha.Count >= 3) ? input.Alpha[1] : null;
                 byte? alpha_b = (input.Alpha != null && input.Alpha.Count >= 3) ? input.Alpha[2] : null;
 
-                ActiveRPF? Optimization = await ctx.ActiveRPFs.Where(a => a.FileID == input.ImageHash).Where(a => a.CLUT == input.CLUT_Size && a.Method == input.Mode).Where(a => a.Red == alpha_r && a.Green == alpha_g && a.Blue == alpha_b).FirstOrDefaultAsync();
+                ActiveRPF? Optimization = await ctx.ActiveRPFs.Where(a => a.FileID == input.ImageHash).Where(a => a.CLUT == input.CLUT_Size && a.Method == input.Mode && a.Frames == input.Frames).Where(a => a.Red == alpha_r && a.Green == alpha_g && a.Blue == alpha_b).FirstOrDefaultAsync();
 
 
                 if (Optimization != null)
@@ -44,6 +44,8 @@ namespace backend.Controllers
                     texture!.CLUTRow = input.CLUTRow;
                     texture!.CLUTX = input.CLUT_X;
                     texture!.CLUTY = input.CLUT_Y;
+
+                    texture!.FrameStruct = (byte)((input.FrameInterval << 5) | input.Frames);
 
 
 
@@ -106,6 +108,7 @@ namespace backend.Controllers
                 Log.FileID = input.ImageHash;
 
                 Log.CLUT = input.CLUT_Size;
+                Log.Frames = input.Frames;
                 Log.Method = input.Mode;
 
 
@@ -177,6 +180,9 @@ namespace backend.Controllers
                     texture.CLUTRow = rpf.CLUTRow;
                     texture.CLUT_X = (UInt16)rpf.CLUTX;
                     texture.CLUT_Y = rpf.CLUTY;
+
+                    texture.Frames = (byte)(rpf.FrameStruct & 0x1F);
+                    texture.FrameInterval = (byte)(rpf.FrameStruct >> 5);
 
 
 

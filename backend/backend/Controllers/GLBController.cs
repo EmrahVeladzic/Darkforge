@@ -33,7 +33,7 @@ namespace backend.Controllers
                     {
                         input.TexWidth = texture.Width;
                         input.TexHeight = texture.Height;
-                        input.TexOffsetX = (byte)((texture.TexX & 63) << ((texture.CLUT > 15) ? 1 : 2));
+                        input.TexOffsetX = (byte)((texture.TexX & 63) << ((texture.CLUT > 16) ? 1 : 2));
                         input.TexOffsetY = texture.TexY;
                     }
                 }

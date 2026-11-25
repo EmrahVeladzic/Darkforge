@@ -70,7 +70,7 @@ function fit_default_cube_uv():void{
     for(let msh of ast.mdl.meshes){
 
         if(msh.uv!=null){
-            msh.uv.textureCoordinates = [16,16,16,0,0,0,0,16,16,0,16,16,0,16,0,0,0,0,0,16,16,16,16,0,0,0,0,16,16,16,16,0,16,0,16,16,0,16,0,0,16,0,16,16,0,16,0,0].map((c,i)=>(i%2==0)?((tex.offsetX+((c/16)*tex.Width))/256):((tex.offsetY+((c/16)*tex.Height))/256));
+            msh.uv.textureCoordinates = [0,16,0,0,16,0,16,16,0,0,0,16,16,16,16,0,16,0,16,16,0,16,0,0,16,0,16,16,0,16,0,0,0,0,0,16,16,16,16,0,0,0,0,16,16,16,16,0].map((c,i)=>(i%2==0)?((tex.offsetX+((c/16)*tex.Width))/256):((tex.offsetY+((c/16)*tex.Height))/256));
         }
 
     }

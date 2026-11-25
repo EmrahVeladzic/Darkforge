@@ -109,11 +109,10 @@ namespace backend.Models
             {
                 temp.Add(this.MDL.OffsetX);
                 temp.Add(this.MDL.OffsetY);
-                PrimitiveSerialization.SerializePrimitive(this.MDL.Width, temp);
-                PrimitiveSerialization.SerializePrimitive(this.MDL.Height, temp);
-                temp.Add(0);
-                temp.Add(0);
-            }
+                temp.Add((byte)(this.MDL.Width - 1));
+                temp.Add((byte)(this.MDL.Height - 1));
+
+            }   
 
             else
             {
@@ -121,10 +120,7 @@ namespace backend.Models
                 temp.Add(0);
                 temp.Add(0);
                 temp.Add(0);
-                temp.Add(0);
-                temp.Add(0);
-                temp.Add(0);
-                temp.Add(0);
+
             }
 
             t_byte = 0;
@@ -167,8 +163,8 @@ namespace backend.Models
 
                             if (has_uv)
                             {
-                                int u = Math.Min(this.MDL.OffsetX + ((m.UV!.Serialized![i * 2] * (this.MDL.Width + 1)) + 127) / 255, 255);
-                                int v = Math.Min(this.MDL.OffsetY + ((m.UV!.Serialized![(i * 2) + 1] * (this.MDL.Height + 1)) + 127) / 255, 255);
+                                int u = Math.Min(this.MDL.OffsetX + ((m.UV!.Serialized![i * 2] * this.MDL.Width) + 127) / 255, 255);
+                                int v = Math.Min(this.MDL.OffsetY + ((m.UV!.Serialized![(i * 2) + 1] * this.MDL.Height) + 127) / 255, 255);
 
                                 uv = (UInt16)(u | (v << 8));
                             }

@@ -32,6 +32,7 @@ export class WebGLService {
   private vMat  : any;
   private pMat  : any;
   private animationFrameId: number | null = null;
+  private tex_tick : number = 0;
   static defaultFrameDuration : number = (1000/60);
 
    private animSubscription!: Subscription;
@@ -235,6 +236,12 @@ export class WebGLService {
 
     current_time/=1000;
     
+
+      this.tex_tick++;
+
+      if(tex.advance(this.tex_tick) && tex_update==false){
+        flip_tex_state();
+      }
 
       if(tex_update==true){
         this.gl.texImage2D(this.gl.TEXTURE_2D,0,this.gl.RGBA,256,256,0,this.gl.RGBA,this.gl.UNSIGNED_SHORT_5_5_5_1,tex.Data);
@@ -508,4 +515,3 @@ export class WebGLService {
   }
 
 }
-

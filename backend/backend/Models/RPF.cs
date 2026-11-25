@@ -96,20 +96,20 @@ namespace backend.Models
         {
             List<byte> temp = new List<byte>();
 
-            bool eight_bit = this.CLUT > 15;
+            bool eight_bit = this.CLUT > 16;
             int per_half = eight_bit ? 2 : 4;
             int bits = eight_bit ? 8 : 4;
             int per_byte = 8 / bits;
             int mask = (1 << bits) - 1;
 
-            int width = this.Width + 1;
-            int height = this.Height + 1;
+            int width = this.Width;
+            int height = this.Height;
             int padded_width = ((width + per_half - 1) / per_half) * per_half;
 
             List<Pixel15> palette = PLT?.Data ?? new List<Pixel15>();
-            int clut_span = this.CLUT + 1;
+            int clut_span = this.CLUT;
 
-            clut_span = ((clut_span + 15) & ~0xF);
+            int frames = this.FrameStruct & 0x1F;
 
             UInt32 tex_line = (UInt32)((this.TexRow ? 256 : 0) + this.TexY);
             UInt32 tex_span = (UInt32)(padded_width / per_half);
@@ -120,7 +120,7 @@ namespace backend.Models
             UInt32 size_tex = ((UInt32)height << 16) | tex_span;
 
             UInt32 dest_clut = ((clut_line & 0x01FF) << 16) | (UInt32)(UInt16)this.CLUTX;
-            UInt32 size_clut = (1u << 16) | (UInt32)clut_span;
+            UInt32 size_clut = ((UInt32)frames << 16) | (UInt32)clut_span;
 
             UInt16 texpage = (UInt16)((((UInt16)this.TexX >> 6) & 0x000F)
                                     | ((this.TexRow ? 1 : 0) << 4)
@@ -142,10 +142,14 @@ namespace backend.Models
             PrimitiveSerialization.SerializePrimitive(texpage, temp);
             PrimitiveSerialization.SerializePrimitive(clut_word, temp);
 
-            for (int i = 0; i < clut_span; i++)
+            for (int f = 0; f < frames; f++)
             {
-                UInt16 colour = (i < palette.Count) ? palette[i].Data : (UInt16)0;
-                PrimitiveSerialization.SerializePrimitive(colour, temp);
+                for (int i = 0; i < clut_span; i++)
+                {
+                    int src = (f * clut_span) + i;
+                    UInt16 colour = (src < palette.Count) ? palette[src].Data : (UInt16)0;
+                    PrimitiveSerialization.SerializePrimitive(colour, temp);
+                }
             }
 
             byte[] packed = PGA?.Serialized ?? Array.Empty<byte>();

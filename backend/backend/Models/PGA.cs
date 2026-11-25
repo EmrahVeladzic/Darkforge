@@ -11,7 +11,7 @@ namespace backend.Models
     [Table("PGA", Schema = "Models")]
     public class PGA : BaseBufferEntity
     {
-        //Indexed image data. Points to slots in the CLUT. Element size is 1 byte by default but can represent multiple pixels. 
+        //Indexed image data. Points to slots in the CLUT. Element size is 1 byte by default but can represent multiple pixels.
 
         public PGA() : base()
         {
@@ -24,44 +24,62 @@ namespace backend.Models
 
             byte value = 0;
 
-            Pixel15 compare = new Pixel15();
+            int count = IMG!.Indices.Length;
 
-            for (int i = 0; i < IMG!.Image!.Data!.Count; i++)
+            int frames = IMG!.Frames;
+
+            for (int i = 0; i < count; i++)
             {
-                compare.Setup(IMG!.Image!.Data![i], !IMG!.Image!.Data![i].Equals(IMG!.Alpha!));
 
-                if (IMG!.Image!.Data![i].Equals(IMG!.Alpha!))
+                UInt128 key = IMG!.Indices[i];
+
+                byte index = 0;
+
+                int best = 0;
+
+                for (int f = 0; f < frames; f++)
                 {
-                    compare.Data = 0x0000;
+                    byte candidate = (byte)(key >> (8 * f));
 
+                    int occurences = 0;
+
+                    for (int g = 0; g < frames; g++)
+                    {
+                        if ((byte)(key >> (8 * g)) == candidate)
+                        {
+                            occurences++;
+                        }
+                    }
+
+                    if (occurences > best)
+                    {
+                        best = occurences;
+                        index = candidate;
+                    }
                 }
-
 
                 if (IMG!.Shift_Value == 0)
                 {
-                    this.ToSerialize.Add(IMG.Get_Index(compare));
-
+                    this.ToSerialize.Add(index);
                 }
 
                 else
                 {
                     int per = 8 / IMG!.Shift_Value;
 
-                    value |= (byte)(IMG.Get_Index(compare) << (IMG!.Shift_Value * (i % per)));
+                    value |= (byte)(index << (IMG!.Shift_Value * (i % per)));
 
                     if ((i + 1) % per == 0)
                     {
                         this.ToSerialize.Add(value);
 
                         value = 0;
-
                     }
-
                 }
 
             }
 
-            if (IMG!.Shift_Value != 0 && IMG!.Image!.Data!.Count % (8 / IMG!.Shift_Value) != 0)
+            if (IMG!.Shift_Value != 0 && count % (8 / IMG!.Shift_Value) != 0)
             {
                 this.ToSerialize.Add(value);
             }

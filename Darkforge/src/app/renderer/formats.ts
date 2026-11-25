@@ -14,20 +14,29 @@ export class Texture{
     public Data! : Uint16Array;
     public offsetX : number = 0;
     public offsetY : number = 0;
+    public Colours : number = 0;
+    public Frames : number = 1;
+    public Shift : number = 0;
+    public Frame : number = 0;
 
 
 
-    constructor(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0) {
+    constructor(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0,colours:number=0,frames:number=1,shift:number=0) {
 
-        this.reset(i,clut,pixels,width,height,x,y);
+        this.reset(i,clut,pixels,width,height,x,y,colours,frames,shift);
         
     }
 
-    public reset(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0):void{
+    public reset(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0,colours:number=0,frames:number=1,shift:number=0):void{
         this.id=i;
         this.CLUT=clut;
 
-        this.offsetX=(x&63)<<((clut.length>16)?1:2);
+        this.Colours = (colours>0)?colours:clut.length;
+        this.Frames = Math.max(1,frames);
+        this.Shift = shift;
+        this.Frame = 0;
+
+        this.offsetX=(x&63)<<((this.Colours>16)?1:2);
         this.offsetY=y;
 
         for(let i =0; i<this.CLUT.length;i++){
@@ -39,12 +48,39 @@ export class Texture{
         this.Width=width;
         this.Height=height;
 
-        let bpi = get_bits_per_index(this.CLUT.length);
+        this.build();
+
+    }
+
+    public advance(tick:number):boolean{
+
+        if(this.Frames<=1){
+            return false;
+        }
+
+        const f = (tick>>this.Shift)%this.Frames;
+
+        if(f===this.Frame){
+            return false;
+        }
+
+        this.Frame=f;
+
+        this.build();
+
+        return true;
+    }
+
+    private build():void{
+
+        let bpi = get_bits_per_index(this.Colours);
         let data_length_mult = (8/bpi);
 
         let mask = get_bit_mask(bpi);
 
-        this.Data = new Uint16Array(this.Width * this.Height);
+        const row = this.Frame*this.Colours;
+
+        let pixels = new Uint16Array(this.Width * this.Height);
       
         for(let i =0; i<this.Indices.length;i++){
 
@@ -52,7 +88,9 @@ export class Texture{
 
             for(let j = 0; j<data_length_mult; j++){
 
-                this.Data[((i*data_length_mult)+j)%(this.Width*this.Height)]=this.CLUT[((base_byte>>(j*bpi))&mask)];
+                const src = row+((base_byte>>(j*bpi))&mask);
+
+                pixels[((i*data_length_mult)+j)%(this.Width*this.Height)]=(src<this.CLUT.length)?this.CLUT[src]:0;
 
             }
 
@@ -65,16 +103,12 @@ export class Texture{
         for (let v = 0; v < this.Height; v++) {
 
             for (let u = 0; u < this.Width; u++) {
-                atlas[((v + this.offsetY) * 256) + (u + this.offsetX)] = this.Data[(v * this.Width) + u];
+                atlas[((v + this.offsetY) * 256) + (u + this.offsetX)] = pixels[(v * this.Width) + u];
             }
 
         }
 
-        
-
         this.Data=atlas;
-        
-        this.Indices=[];
 
     }
 
