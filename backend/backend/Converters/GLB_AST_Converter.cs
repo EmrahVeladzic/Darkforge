@@ -13,7 +13,7 @@ using System.Text.Json;
 
 namespace backend.Converters
 {
-    public class AST_DATA :BaseConverter
+    public class AST_DATA : BaseConverter
     {
         private ModelDTO? Input { get; set; }
 
@@ -28,7 +28,9 @@ namespace backend.Converters
         public List<Matrix4x4>? Matrices { get; set; }
         public Int32[]? Joint_Index_Array { get; set; }
 
-        
+        public Dictionary<int, int> Node_To_Joint { get; set; } = new();
+
+
 
         public byte GetFrame(byte FPS, float time)
         {
@@ -45,7 +47,8 @@ namespace backend.Converters
 
         }
 
-        public override async Task Convert(DarkforgeDBContext ctx) { 
+        public override async Task Convert(DarkforgeDBContext ctx)
+        {
 
             this.Model = await ctx.GLBs.Where(g => g.Hash == this.Input!.ModelHash).FirstAsync();
 
@@ -81,6 +84,11 @@ namespace backend.Converters
 
                         Joint_Index_Array = joints.Deserialize<Int32[]>()!;
 
+                        for (int i = 0; i < Joint_Index_Array.Length; i++)
+                        {
+                            Node_To_Joint[Joint_Index_Array[i]] = i;
+                        }
+
 
 
                         for (int i = 0; i < Joint_Index_Array.Length; i++)
@@ -102,19 +110,21 @@ namespace backend.Converters
 
                         for (int i = 0; i < Joint_Index_Array.Length; i++)
                         {
+                            JsonElement joint_node = nodes[Joint_Index_Array[i]];
+
                             Vector3 translation = Vector3.Zero;
                             Quaternion rotation = Quaternion.Identity;
                             Vector3 scale = Vector3.One;
 
 
-                            if (nodes[i].TryGetProperty("translation", out JsonElement trans) && trans.ValueKind == JsonValueKind.Array)
+                            if (joint_node.TryGetProperty("translation", out JsonElement trans) && trans.ValueKind == JsonValueKind.Array)
                             {
                                 float[] t = trans.Deserialize<float[]>()!;
 
                                 translation = new Vector3(t[0], t[1], t[2]);
                             }
 
-                            if (nodes[i].TryGetProperty("rotation", out JsonElement rot) && rot.ValueKind == JsonValueKind.Array)
+                            if (joint_node.TryGetProperty("rotation", out JsonElement rot) && rot.ValueKind == JsonValueKind.Array)
                             {
                                 float[] r = rot.Deserialize<float[]>()!;
 
@@ -122,34 +132,37 @@ namespace backend.Converters
                             }
 
 
-                            if (nodes[i].TryGetProperty("scale", out JsonElement scal) && scal.ValueKind == JsonValueKind.Array)
+                            if (joint_node.TryGetProperty("scale", out JsonElement scal) && scal.ValueKind == JsonValueKind.Array)
                             {
                                 float[] s = scal.Deserialize<float[]>()!;
 
                                 scale = new Vector3(s[0], s[1], s[2]);
                             }
 
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(translation.X, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(translation.Y, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(translation.Z, this.Input.PrecisionBits));
+                            Bones[i].InitialTranslation.Add(FixedPoint.GetFixed<Int32>(translation.X, this.Input.PrecisionBits));
+                            Bones[i].InitialTranslation.Add(FixedPoint.GetFixed<Int32>(translation.Y, this.Input.PrecisionBits));
+                            Bones[i].InitialTranslation.Add(FixedPoint.GetFixed<Int32>(translation.Z, this.Input.PrecisionBits));
 
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(rotation.X, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(rotation.Y, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(rotation.Z, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(rotation.W, this.Input.PrecisionBits));
+                            Bones[i].InitialRotation.Add(FixedPoint.GetFixed<Int16>(rotation.X, 12));
+                            Bones[i].InitialRotation.Add(FixedPoint.GetFixed<Int16>(rotation.Y, 12));
+                            Bones[i].InitialRotation.Add(FixedPoint.GetFixed<Int16>(rotation.Z, 12));
+                            Bones[i].InitialRotation.Add(FixedPoint.GetFixed<Int16>(rotation.W, 12));
 
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(scale.X, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(scale.Y, this.Input.PrecisionBits));
-                            Bones[i].InitialTransform.Add(FixedPoint.GetFixed<Int32>(scale.Z, this.Input.PrecisionBits));
+                            Bones[i].InitialScale.Add(FixedPoint.GetFixed<Int16>(scale.X, 12));
+                            Bones[i].InitialScale.Add(FixedPoint.GetFixed<Int16>(scale.Y, 12));
+                            Bones[i].InitialScale.Add(FixedPoint.GetFixed<Int16>(scale.Z, 12));
 
 
-                            if (nodes[i].TryGetProperty("children", out JsonElement child_joints) && child_joints.ValueKind == JsonValueKind.Array)
+                            if (joint_node.TryGetProperty("children", out JsonElement child_joints) && child_joints.ValueKind == JsonValueKind.Array)
                             {
                                 int[] children = child_joints.Deserialize<int[]>()!;
 
                                 for (int j = 0; j < children.Length; j++)
                                 {
-                                    Bones[children[j]].Parent_ID = Bones[i].ID;
+                                    if (Node_To_Joint.TryGetValue(children[j], out int child_joint))
+                                    {
+                                        Bones[child_joint].Parent_ID = Bones[i].ID;
+                                    }
 
                                 }
 
@@ -159,7 +172,7 @@ namespace backend.Converters
 
 
 
-                           await ctx.SaveChangesAsync();
+                            await ctx.SaveChangesAsync();
 
 
 
@@ -184,7 +197,7 @@ namespace backend.Converters
 
                                     float[] floatArray = MemoryMarshal.Cast<byte, float>(Model.BLOB.AsSpan(k, 16 * sizeof(float))).ToArray();
 
-                                    
+
                                     Matrices.Add(new Matrix4x4(
                                         floatArray[0], floatArray[1], floatArray[2], floatArray[3],
                                         floatArray[4], floatArray[5], floatArray[6], floatArray[7],
@@ -203,7 +216,7 @@ namespace backend.Converters
                     }
 
 
-                   
+
 
 
                     if (Model!.Metadata.RootElement.TryGetProperty("animations", out JsonElement anims) && anims.ValueKind == JsonValueKind.Array)
@@ -218,7 +231,7 @@ namespace backend.Converters
 
                             ANM anim = new();
 
-                            anim.FKR_ID = (int)this.Output.FKR_ID!;
+                            anim.FKR_ID = (long)this.Output.FKR_ID!;
 
                             await ctx.ANMs.AddAsync(anim);
 
@@ -237,10 +250,15 @@ namespace backend.Converters
 
                                     if (channels[j].TryGetProperty("target", out JsonElement target) && target.ValueKind == JsonValueKind.Object)
                                     {
-                                        if (target.TryGetProperty("node", out JsonElement node) && node.TryGetInt32(out Int32 bone_index))
+                                        if (target.TryGetProperty("node", out JsonElement node) && node.TryGetInt32(out Int32 node_index) && Node_To_Joint.TryGetValue(node_index, out int joint_index))
                                         {
-                                            track.BN_ID = Bones![bone_index].ID;
+                                            track.BN_ID = Bones![joint_index].ID;
                                         }
+                                    }
+
+                                    if (track.BN_ID == 0)
+                                    {
+                                        continue;
                                     }
 
 
@@ -262,7 +280,7 @@ namespace backend.Converters
                                                         track.T_Frames.Add(GetFrame(this.Input.TargetFPS, BitConverter.ToSingle(this.Model.BLOB!, k)));
 
 
-                                                 
+
                                                     }
 
 
@@ -342,16 +360,16 @@ namespace backend.Converters
                                                     for (int k = offset; k < (offset + length); k += (sizeof(float) * 4))
                                                     {
 
-                                                        track.Rotations.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k), this.Input.PrecisionBits));
+                                                        track.Rotations.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k), 12));
 
 
-                                                        track.Rotations.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k + sizeof(float)), this.Input.PrecisionBits));
+                                                        track.Rotations.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k + sizeof(float)), 12));
 
 
-                                                        track.Rotations.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 2)), this.Input.PrecisionBits));
+                                                        track.Rotations.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 2)), 12));
 
 
-                                                        track.Rotations.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 3)), this.Input.PrecisionBits));
+                                                        track.Rotations.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 3)), 12));
                                                     }
 
 
@@ -403,13 +421,13 @@ namespace backend.Converters
                                                     for (int k = offset; k < (offset + length); k += (sizeof(float) * 3))
                                                     {
 
-                                                        track.Scales.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k), this.Input.PrecisionBits));
+                                                        track.Scales.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k), 12));
 
 
-                                                        track.Scales.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k + sizeof(float)), this.Input.PrecisionBits));
+                                                        track.Scales.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k + sizeof(float)), 12));
 
 
-                                                        track.Scales.Add(FixedPoint.GetFixed<Int32>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 2)), this.Input.PrecisionBits));
+                                                        track.Scales.Add(FixedPoint.GetFixed<Int16>(BitConverter.ToSingle(this.Model.BLOB!, k + (sizeof(float) * 2)), 12));
 
 
                                                     }
@@ -452,6 +470,13 @@ namespace backend.Converters
                 {
 
                     this.Output.MDL = new();
+
+                    this.Output.MDL.Width = this.Input.TexWidth;
+                    this.Output.MDL.Height = this.Input.TexHeight;
+                    this.Output.MDL.OffsetX = this.Input.TexOffsetX;
+                    this.Output.MDL.OffsetY = this.Input.TexOffsetY;
+
+
                     await ctx.MDLs.AddAsync(this.Output.MDL);
 
                     await ctx.SaveChangesAsync();
@@ -483,6 +508,20 @@ namespace backend.Converters
 
                         if (subMeshes[i].TryGetProperty("primitives", out JsonElement primitives) && primitives.ValueKind == JsonValueKind.Array)
                         {
+
+                            if (primitives[0].TryGetProperty("material", out JsonElement a_material) && a_material.TryGetInt32(out Int32 mat_index) && Model!.Metadata.RootElement.TryGetProperty("materials", out JsonElement materials) && materials.ValueKind == JsonValueKind.Array && mat_index < materials.GetArrayLength())
+                            {
+                                if (!(materials[mat_index].TryGetProperty("doubleSided", out JsonElement d_sided) && d_sided.ValueKind == JsonValueKind.True))
+                                {
+                                    Meshes[i].Material = 0;
+                                }
+                                else
+                                {
+                                    Meshes[i].Material = 1;
+                                }
+                            }
+
+
                             if (primitives[0].TryGetProperty("indices", out JsonElement a_indices) && a_indices.TryGetInt32(out Int32 ind_access))
                             {
 
@@ -525,8 +564,6 @@ namespace backend.Converters
 
                                 if (attributes.TryGetProperty("TEXCOORD_0", out JsonElement a_uvs) && a_uvs.TryGetInt32(out Int32 uv_access))
                                 {
-                                    this.Output.MDL.Width = this.Input.TexWidth;
-                                    this.Output.MDL.Height = this.Input.TexHeight;
 
                                     if (accessors[uv_access].TryGetProperty("bufferView", out JsonElement b_uv) && b_uv.TryGetInt32(out Int32 uv_view))
                                     {
@@ -538,7 +575,7 @@ namespace backend.Converters
                                             Meshes[i].UV = new UV();
 
 
-                                           await ctx.UVs.AddAsync(Meshes[i].UV!);
+                                            await ctx.UVs.AddAsync(Meshes[i].UV!);
 
 
 
@@ -554,14 +591,12 @@ namespace backend.Converters
                                                 float y = BitConverter.ToSingle(this.Model!.BLOB!, (j + sizeof(float)));
 
 
-                                                UInt16 w = (UInt16)((Int32)(this.Input.TexWidth) + 1);
-                                                UInt16 h = (UInt16)((Int32)(this.Input.TexHeight) + 1);
+                                                UInt16 w = 256;
+                                                UInt16 h = 256;
 
 
-
-
-                                                Meshes[i].UV!.TextureCoordinates!.Add((byte)((UInt16)(Math.Round((x/((float)w/(float)(w-1))) * (float)w)) % w));
-                                                Meshes[i].UV!.TextureCoordinates!.Add((byte)((UInt16)(Math.Round((y/((float)h/(float)(h-1))) * (float)h)) % h));
+                                                Meshes[i].UV!.TextureCoordinates!.Add((byte)((UInt16)(Math.Round((x / ((float)w / (float)(w - 1))) * (float)w)) % w));
+                                                Meshes[i].UV!.TextureCoordinates!.Add((byte)((UInt16)(Math.Round((y / ((float)h / (float)(h - 1))) * (float)h)) % h));
 
 
                                             }
@@ -601,9 +636,9 @@ namespace backend.Converters
 
                                             if (Bones != null && Joint_Index_Array != null)
                                             {
-                                                Meshes[i].BN_ID = Bones![Joint_Index_Array[mesh_j[0]]].ID;
+                                                Meshes[i].BN_ID = Bones![mesh_j[0]].ID;
 
-                                                tmpbn=(int)mesh_j[0];
+                                                tmpbn = (int)mesh_j[0];
                                             }
 
                                         }
@@ -645,19 +680,19 @@ namespace backend.Converters
 
                                                 if (Matrices != null)
                                                 {
-                                                    Vector4 temp = Vector4.Transform(new Vector4(x,y,z,1.0f),Matrices[tmpbn]);
+                                                    Vector4 temp = Vector4.Transform(new Vector4(x, y, z, 1.0f), Matrices[tmpbn]);
 
                                                     x = temp.X;
-                                                    y=temp.Y;
-                                                    z=temp.Z;
+                                                    y = temp.Y;
+                                                    z = temp.Z;
                                                 }
 
 
 
 
-                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int32>(x, this.Input.PrecisionBits));
-                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int32>(y, this.Input.PrecisionBits));
-                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int32>(z, this.Input.PrecisionBits));
+                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int16>(x, this.Input.PrecisionBits));
+                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int16>(y, this.Input.PrecisionBits));
+                                                Meshes[i].VT!.Vertices.Add(FixedPoint.GetFixed<Int16>(z, this.Input.PrecisionBits));
                                             }
 
 
@@ -700,7 +735,7 @@ namespace backend.Converters
 
                                                 if (Matrices != null)
                                                 {
-                                                    Vector4 temp = Vector4.Transform(new Vector4(x, y, z, 1.0f), Matrices[tmpbn]);
+                                                    Vector4 temp = Vector4.Transform(new Vector4(x, y, z, 0.0f), Matrices[tmpbn]);
 
                                                     x = temp.X;
                                                     y = temp.Y;
@@ -711,9 +746,9 @@ namespace backend.Converters
 
 
 
-                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int32>(x, this.Input.PrecisionBits));
-                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int32>(y, this.Input.PrecisionBits));
-                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int32>(z, this.Input.PrecisionBits));
+                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int16>(x, 12));
+                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int16>(y, 12));
+                                                Meshes[i].NRM!.Normals.Add(FixedPoint.GetFixed<Int16>(z, 12));
                                             }
 
 
@@ -755,9 +790,11 @@ namespace backend.Converters
                 this.Meshes?.Clear();
                 this.Bones?.Clear();
 
+                this.Node_To_Joint.Clear();
+
                 this.Joint_Index_Array = null;
-               
-            
+
+
 
 
             }

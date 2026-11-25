@@ -68,20 +68,24 @@ export class WebGLService {
 
     if(!temp_track){
 
-      
-      
+      const trs_init = [
+        ...(temp_bone?.initialTranslation ?? []),
+        ...(temp_bone?.initialRotation ?? []),
+        ...(temp_bone?.initialScale ?? []),
+      ];
 
-      temp_bone?.currentTRS!=get_Mat(temp_bone?.initialTransform!);
+      temp_bone?.currentTRS!=get_Mat(trs_init);
       return;
 
     }
 
 
-    let interp_v = get_interpolation_value(_time,temp_track?.t_Frames[(temp_track.t_Index!%temp_track.t_Frames.length)]!,temp_track?.t_Frames[((temp_track.t_Index!+1)%temp_track.t_Frames.length)]!);
+    temp_track.t_Interp=get_interpolation_value(temp_track.t_Interp!,_time,temp_track?.t_Frames[(temp_track.t_Index!%temp_track.t_Frames.length)]!,temp_track?.t_Frames[((temp_track.t_Index!+1)%temp_track.t_Frames.length)]!);
   
 
-    if(interp_v>=1){
-      interp_v=0
+    if(temp_track.t_Interp>=1){
+      
+      temp_track!.t_Interp=0;
       temp_track!.t_Index!++;
     }
 
@@ -91,14 +95,14 @@ export class WebGLService {
     let t_e :vec3 = get_Vec(temp_track?.translations!,((index+1)%temp_track?.t_Frames.length!))
 
     let out_t :vec3 = vec3.create();
-    vec3.lerp(out_t,t_b,t_e,interp_v);
+    vec3.lerp(out_t,t_b,t_e,temp_track.t_Interp);
 
-    interp_v = get_interpolation_value(_time,temp_track?.r_Frames[(temp_track.r_Index!%temp_track.r_Frames.length)]!,temp_track?.r_Frames[((temp_track.r_Index!+1)%temp_track.r_Frames.length)]!);
+    temp_track.r_Interp = get_interpolation_value(temp_track.r_Interp!,_time,temp_track?.r_Frames[(temp_track.r_Index!%temp_track.r_Frames.length)]!,temp_track?.r_Frames[((temp_track.r_Index!+1)%temp_track.r_Frames.length)]!);
 
    
 
-    if(interp_v>=1){
-      interp_v=0
+    if(temp_track.r_Interp>=1){
+      temp_track.r_Interp=0
       temp_track!.r_Index!++;
     }
 
@@ -108,15 +112,15 @@ export class WebGLService {
     let r_e :quat = get_Quat(temp_track?.rotations!,((index+1)%temp_track?.r_Frames.length!))
 
     let out_r :quat = quat.create();
-    quat.slerp(out_r,r_b,r_e,interp_v);
+    quat.slerp(out_r,r_b,r_e,temp_track.r_Interp);
     quat.normalize(out_r,out_r);
 
-    interp_v = get_interpolation_value(_time,temp_track?.s_Frames[(temp_track.s_Index!%temp_track.s_Frames.length)]!,temp_track?.s_Frames[((temp_track.s_Index!+1)%temp_track.s_Frames.length)]!);
+    temp_track.s_Interp = get_interpolation_value(temp_track.s_Interp!,_time,temp_track?.s_Frames[(temp_track.s_Index!%temp_track.s_Frames.length)]!,temp_track?.s_Frames[((temp_track.s_Index!+1)%temp_track.s_Frames.length)]!);
 
     
 
-    if(interp_v>=1){
-      interp_v=0
+    if(temp_track.s_Interp>=1){
+      temp_track.s_Interp=0;
       temp_track!.s_Index!++;
     }
 
@@ -126,7 +130,7 @@ export class WebGLService {
     let s_e :vec3 = get_Vec(temp_track?.scales!,((index+1)%temp_track?.s_Frames.length!))
     
     let out_s :vec3 = vec3.create();
-    vec3.lerp(out_s,s_b,s_e,interp_v);
+    vec3.lerp(out_s,s_b,s_e,temp_track.s_Interp);
 
     mat4.fromRotationTranslationScale(temp_bone?.currentTRS!,out_r,out_t,out_s);
 
@@ -221,14 +225,9 @@ export class WebGLService {
       
       let current_time = performance.now();
     const diff = current_time-global_time;
-    let target_duration = WebGLService.defaultFrameDuration;
 
-    if(ast.fkr?.fps!=null){  
-      target_duration=(1000/ast.fkr.fps);
-    
-    }
 
-    if(diff>=target_duration){
+    if(diff>=WebGLService.defaultFrameDuration){
       
     
 
@@ -238,7 +237,7 @@ export class WebGLService {
     
 
       if(tex_update==true){
-        this.gl.texImage2D(this.gl.TEXTURE_2D,0,this.gl.RGBA,tex.Width,tex.Height,0,this.gl.RGBA,this.gl.UNSIGNED_SHORT_5_5_5_1,tex.Data);
+        this.gl.texImage2D(this.gl.TEXTURE_2D,0,this.gl.RGBA,256,256,0,this.gl.RGBA,this.gl.UNSIGNED_SHORT_5_5_5_1,tex.Data);
         flip_tex_state();
       }
 
@@ -288,7 +287,7 @@ export class WebGLService {
               
             for(let b of ast.fkr.bones){
 
-              this.interpolate_bone_transforms(ast.fkr,current_time,b.id);
+              this.interpolate_bone_transforms(ast.fkr,diff,b.id);
 
             }
 
@@ -298,7 +297,7 @@ export class WebGLService {
             
             for(let b of ast.fkr.bones){
 
-              b.currentTRS=get_Mat(b.initialTransform);
+              b.currentTRS=get_Mat(b.initialTranslation.concat(b.initialRotation).concat(b.initialScale)  );
   
             }
 
@@ -347,6 +346,12 @@ export class WebGLService {
           this.gl.vertexAttribPointer(uv,2,this.gl.FLOAT,false,2*Float32Array.BYTES_PER_ELEMENT,0*Float32Array.BYTES_PER_ELEMENT);
           this.gl.enableVertexAttribArray(uv);
     
+          if(((ast.mdl?.meshes[i].material ?? 0) & 1) == 0){
+            this.gl.enable(this.gl.CULL_FACE);
+          }
+          else{
+            this.gl.disable(this.gl.CULL_FACE);
+          }
           
           this.gl!.drawElements(this.gl!.TRIANGLES,ast.mdl?.meshes[i].ind?.indices!.length??0,this.gl!.UNSIGNED_SHORT,0);
         

@@ -7,8 +7,7 @@ namespace backend.Requests
         //Processed asset.
         public AST? Asset { get; set; }
 
-        public int AST_ID { get; set; }
+        public long AST_ID { get; set; }
 
-        public bool CanDelete { get; set; }
     }
 }

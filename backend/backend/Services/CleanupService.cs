@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 
 public class CleanupService : BackgroundService
 {
-   
+
 
     public CleanupService()
     {
-        
+
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-      
+
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -30,7 +30,7 @@ public class CleanupService : BackgroundService
 
                 foreach (GLB Model in Models)
                 {
-                    int Active = await ctx.ActiveASTs.Where(a=>a.FileID==Model.Hash).CountAsync();
+                    int Active = await ctx.ActiveASTs.Where(a => a.FileID == Model.Hash).CountAsync();
 
                     if (Active == 0)
                     {
@@ -79,9 +79,14 @@ public class CleanupService : BackgroundService
             }
 
 
-            await Task.Delay(TimeSpan.FromHours(6), stoppingToken);
+            TaskCompletionSource stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            using (CancellationTokenRegistration registration = stoppingToken.Register(() => stopped.TrySetResult()))
+            {
+                await Task.WhenAny(Task.Delay(TimeSpan.FromHours(6)), stopped.Task);
+            }
         }
 
- 
+
     }
 }

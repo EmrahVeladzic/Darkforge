@@ -1,30 +1,43 @@
 import { Asset } from "../app/renderer/formats";
 import { hash_data } from "../utils/hash_maker";
+
 export class ImageDTO{
-   
+
     public imageData : string |null;
     public imageHash : string;
     public cluT_Size : number;
     public alpha :  number[]|null;
     public mode :   boolean;
-    public protectedBufferSize : number;
-    
-    
-    constructor(data:string, clut_size : number, alpha_c : number[]|null, c_mode : boolean, protected_bfr_size : number ,hash:string) {
+    public texRow : boolean;
+    public tex_X : number;
+    public tex_Y : number;
+    public clutRow : boolean;
+    public cluT_X : number;
+    public cluT_Y : number;
+
+
+
+    constructor(data:string, clut_size : number, alpha_c : number[]|null, c_mode : boolean,trow:number,tx:number,ty:number,crow:number,cx:number,cy:number ,hash:string) {
         this.imageData=data;
         this.imageHash=hash;
-       
-       this.cluT_Size = clut_size-1;
-       this.alpha = alpha_c;
-       this.mode = c_mode;
-       this.protectedBufferSize = protected_bfr_size;
-      
+
+        this.cluT_Size = clut_size-1;
+        this.alpha = alpha_c;
+        this.mode = c_mode;
+
+        this.texRow = trow == 1;
+        this.tex_X = tx;
+        this.tex_Y = ty;
+
+        this.clutRow = crow == 1;
+        this.cluT_X = cx;
+        this.cluT_Y = cy;
 
     }
-    
-    static async create(data: string, clut_size: number, alpha_c: number[] | null, c_mode: boolean, protected_bfr_size: number): Promise<ImageDTO> {
+
+    static async create(data: string, clut_size: number, alpha_c: number[] | null, c_mode: boolean, trow:number,tx:number,ty:number,crow:number,cx:number,cy:number): Promise<ImageDTO> {
         const imageHash = await hash_data(data);
-        return new ImageDTO(data, clut_size, alpha_c, c_mode, protected_bfr_size, imageHash);
+        return new ImageDTO(data, clut_size, alpha_c, c_mode,trow,tx,ty,crow,cx,cy,imageHash);
     }
 
 }
@@ -61,8 +74,11 @@ export class ModelDTO{
     public targetFPS : number;
     public texWidth : number;
     public texHeight : number;
+    public texOffsetX : number;
+    public texOffsetY :number;
+    public rpF_ID : number;
 
-    constructor(data: string, precision:number,fps:number,width:number,height:number, hash:string) {
+    constructor(data: string, precision:number,fps:number,width:number,height:number,tox:number,toy:number,rpf:number, hash:string) {
        
         this.modelData=data;
         this.precisionBits=precision;
@@ -70,13 +86,15 @@ export class ModelDTO{
         this.texWidth=width-1;
         this.texHeight=height-1;
         this.modelHash=hash;
-       
+        this.texOffsetX = tox;
+        this.texOffsetY = toy;
+        this.rpF_ID = rpf;
         
     }
 
-    static async create(data:string, precision : number, fps:number,width:number,height:number): Promise<ModelDTO> {
+    static async create(data:string, precision : number, fps:number,width:number,height:number,tox:number,toy:number,rpf:number): Promise<ModelDTO> {
         const modelHash = await hash_data(data);
-        return new ModelDTO(data, precision,fps,width,height, modelHash);
+        return new ModelDTO(data, precision,fps,width,height,tox,toy,rpf, modelHash);
     }
 
 }
@@ -85,25 +103,36 @@ export class ModelDTO{
 export class TextureDTO{
 
 
-public colours:number;
-public width:number;
-public height:number;
+    public colours:number;
+    public width:number;
+    public height:number;
 
-public rpF_ID:number;
+    public rpF_ID:number;
 
-public clut:number[];
-public pixels:number[];
+    public clut:number[];
+    public pixels:number[];
 
-public canDelete:boolean;
 
-    constructor(col:number,w:number,h:number,rpf:number,clut:number[],pxl:number[], del:boolean){
+    public texRow : boolean;
+    public tex_X : number;
+    public tex_Y : number;
+    public clutRow : boolean;
+    public cluT_X : number;
+    public cluT_Y : number;
+
+    constructor(col:number,w:number,h:number,rpf:number,clut:number[],pxl:number[], trow:boolean,tx:number,ty:number,crow:boolean,cx:number,cy:number) {
         this.colours=col;
         this.width=w;
         this.height=h;
         this.rpF_ID=rpf;
         this.clut=clut;
         this.pixels=pxl;
-        this.canDelete=del;
+        this.texRow = trow;
+        this.tex_X = tx;
+        this.tex_Y = ty;
+        this.clutRow = crow;
+        this.cluT_X = cx;
+        this.cluT_Y = cy;
     }
 
 
@@ -113,50 +142,44 @@ public canDelete:boolean;
 export class AudioDTO{
 
     public sampleRate : number;
-    public thresholdBits : number;
     public channelCount : number;
     public blockCountPerChannel :number;
     public audioData : number[];
     public wL_ID : number;
     
-    public canDelete:boolean;
 
-    constructor(sR:number,threshold:number,channels:number,blocks:number,wl:number,data:number[],del:boolean){
+    constructor(sR:number,channels:number,blocks:number,wl:number,data:number[]){
            
         this.sampleRate=sR;
-        this.thresholdBits=threshold;
         this.channelCount=channels;
         this.blockCountPerChannel=blocks;
         this.wL_ID=wl;
         this.audioData=data;
-        this.canDelete=del;
 
     }
     
     
- }
+}
 
 
 
- export class AssetDTO{
+export class AssetDTO{
 
     public asset:Asset;
     public asT_ID:number;
-    public canDelete:boolean;
 
-    constructor(a:Asset,a_id:number,del:boolean) {
+    constructor(a:Asset,a_id:number) {
         
         this.asset=a;
         this.asT_ID=a_id;
-        this.canDelete=del;
     }
 
- }
+}
 
- export class ExportDTO{
+export class ExportDTO{
 
     public ast!:string|null;
     public rpf!:string|null;
     public wl!:string|null;
 
- }
+}

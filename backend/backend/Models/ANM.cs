@@ -3,12 +3,12 @@ using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
-    [Table("ANM",Schema ="Models")]
-    public class ANM:BaseEntity
+    [Table("ANM", Schema = "Models")]
+    public class ANM : BaseEntity
     {
         [JsonIgnore]
         [Column("FKRID")]
-        public int FKR_ID { get; set; }
+        public long FKR_ID { get; set; }
 
         [NotMapped]
         public List<TK> Tracks { get; set; }
@@ -21,7 +21,7 @@ namespace backend.Models
 
         public override void Serialize()
         {
-            foreach(TK t in Tracks)
+            foreach (TK t in Tracks)
             {
                 t.Serialize();
             }
@@ -29,7 +29,7 @@ namespace backend.Models
 
         public override void Deserialize()
         {
-            foreach(TK t in Tracks)
+            foreach (TK t in Tracks)
             {
                 t.Deserialize();
             }
@@ -37,7 +37,7 @@ namespace backend.Models
 
         public override void Clear()
         {
-            foreach(TK t in this.Tracks)
+            foreach (TK t in this.Tracks)
             {
                 t.Deserialize();
             }

@@ -1,11 +1,21 @@
+using System.Net.NetworkInformation;
+using backend.Controllers;
 using backend.Database;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+
+if (IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpListeners().Any(e => e.Port == AppController.PORT))
+{
+    using (HttpClient client = new HttpClient())
+    {
+        await client.GetAsync(AppController.URL + "/api/App/open");
+    }
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.UseUrls(AppController.URL);
 
 // Add services to the container.
 
@@ -17,7 +27,6 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
 
     });
-
 
 
 });
@@ -35,29 +44,23 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<DarkforgeDBContext>(options =>
 {
 
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default Connection"));
+    options.UseSqlite(DarkforgeDBContext.ConnectionString);
 
 });
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-        };
-    });
-
-builder.Services.AddAuthorization();
-
 
 builder.Services.AddHostedService<CleanupService>();
+
+builder.Services.AddHostedService<TabWatchService>();
+
+
+if (!File.Exists(DarkforgeDBContext.DBPath))
+{
+    using Stream script = typeof(Program).Assembly.GetManifestResourceStream("DarkforgeDB.sql")!;
+    using StreamReader reader = new StreamReader(script);
+    using DarkforgeDBContext ctx = new DarkforgeDBContext();
+    ctx.Database.ExecuteSqlRaw(reader.ReadToEnd());
+}
 
 var app = builder.Build();
 
@@ -71,16 +74,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-app.UseHttpsRedirection();
-
 app.UseCors("ALL");
 
 
-app.UseAuthentication();
-
-app.UseAuthorization();
-
-
 app.MapControllers();
+
+app.MapFallback("{**path}", EmbeddedFrontend.Serve);
 
 app.Run();

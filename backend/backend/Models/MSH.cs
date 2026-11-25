@@ -3,32 +3,35 @@ using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
-    [Table("MSH",Schema ="Models")]
-    public class MSH:BaseEntity
+    [Table("MSH", Schema = "Models")]
+    public class MSH : BaseEntity
     {
         [JsonIgnore]
         [Column("MDLID")]
-        public int MDL_ID { get; set; }
+        public long MDL_ID { get; set; }
 
         [JsonIgnore]
         [Column("VTID")]
-        public int? VT_ID { get; set; }
+        public long? VT_ID { get; set; }
 
         [JsonIgnore]
         [Column("INDID")]
-        public int? IND_ID { get; set; }
+        public long? IND_ID { get; set; }
 
         [JsonIgnore]
         [Column("UVID")]
-        public int? UV_ID { get; set; }
+        public long? UV_ID { get; set; }
 
         [JsonIgnore]
         [Column("NRMID")]
-        public int? NRM_ID { get; set; }
+        public long? NRM_ID { get; set; }
 
-     
+
         [Column("BNID")]
-        public int? BN_ID { get; set; }
+        public long? BN_ID { get; set; }
+
+        [Column("Material")]
+        public byte Material { get; set; }
 
         [ForeignKey(nameof(VT_ID))]
         public virtual VT? VT { get; set; }
@@ -42,9 +45,9 @@ namespace backend.Models
         [ForeignKey(nameof(UV_ID))]
         public virtual UV? UV { get; set; }
 
-        public MSH():base()
+        public MSH() : base()
         {
-          
+
         }
 
         public override void Serialize()
@@ -55,11 +58,11 @@ namespace backend.Models
             this.NRM?.Serialize();
         }
 
-        public override void Deserialize()
+        public void Deserialize(byte Width, byte Height, byte x_off, byte y_off)
         {
             this.VT?.Deserialize();
             this.IND?.Deserialize();
-            this.UV?.Deserialize();
+            this.UV?.Deserialize(Width, Height, x_off, y_off);
             this.NRM?.Deserialize();
 
         }

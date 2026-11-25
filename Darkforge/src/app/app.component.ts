@@ -1,11 +1,9 @@
-import { Component, OnInit} from '@angular/core';
+import { Component } from '@angular/core';
+import { base_url } from './http';
 import { CommonModule } from '@angular/common';
-import { Router, RouterOutlet } from '@angular/router';
-import { FileTransferService } from './file_transfer/file_service/file-transfer.service';
-import { WebGLService } from './renderer/webgl_service/web-gl.service';
+import { RouterOutlet } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-
 
 @Component({
   selector: 'app-root',
@@ -17,19 +15,6 @@ import { RouterModule } from '@angular/router';
 })
 export class AppComponent {
   title = 'Darkforge';
-  
-  constructor(private router:Router){
-  
 
-  }
-
-  ngOnInit(){ 
-    
-    if (window.location.pathname !== '/login') {
-      this.router.navigateByUrl('/login');
-      
-    }
-  }
- 
-  
+  private live = new EventSource(base_url + "/api/App/live");
 }

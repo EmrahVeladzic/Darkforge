@@ -8,13 +8,11 @@ import { flip_tex_state, tex } from '../../assets/global_assets';
 import { SliderComponent } from "../../utils/controls/slider/slider.component";
 import { NumericComponent } from '../../utils/controls/numeric/numeric.component';
 import { bmp_preview_url } from '../../app/file_transfer/file_service/file-transfer.service';
-import { Subscription, catchError ,of} from 'rxjs';
+import { Subject,Subscription, catchError ,of, takeUntil} from 'rxjs';
 import { alert_localized } from '../../utils/alerts';
-import { force_reload } from '../../app/http';
 import { TranslateService,TranslatePipe, TranslateDirective} from '@ngx-translate/core';
 import { HttpParams } from '@angular/common/http';
-import { user_prefs, UserPreferences } from '../../assets/user_prefs';
-import { get_headers } from '../../utils/httpheaders';
+import { link_slider_numeric } from '../../utils/dynamic_html';
 
 @Component({
   selector: 'app-rpf-form',
@@ -29,15 +27,23 @@ export class RpfFormComponent implements OnInit{
   @ViewChild('bmp_preview',{static:false})cnv!:ElementRef<HTMLCanvasElement>;
   private ctx? : CanvasRenderingContext2D;
   private preview? : HTMLImageElement;
-  private taskCompletedSubscription!: Subscription;
+
+
+  private destroy$ = new Subject<void>();
+
+  private tex_x_last : number = 0;
 
   public btn_enabled:boolean=true;
   public post_delete:boolean=true;
   public btn_translation: string = 'button.post';
- 
+
   @ViewChild('r_s',{static:false})r_s!:SliderComponent;
   @ViewChild('g_s',{static:false})g_s!:SliderComponent;
   @ViewChild('b_s',{static:false})b_s!:SliderComponent;
+
+  @ViewChild('tx',{static:false})tex_x!:NumericComponent;
+  @ViewChild('ty',{static:false})tex_y!:NumericComponent;
+  @ViewChild('cx',{static:false})clut_x!:NumericComponent;
 
   constructor(public translate: TranslateService){
     this.form = new FormGroup({
@@ -51,164 +57,128 @@ export class RpfFormComponent implements OnInit{
       r_numeric : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
       g_numeric : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
       b_numeric : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
-      bfr : new FormControl(0,[Validators.min(0),Validators.max(4),Validators.required])
-
-
+      tex_row : new FormControl(0,[Validators.min(0),Validators.max(1),Validators.required]),
+      tex_x : new FormControl(0,[Validators.min(0),Validators.max(1008),Validators.required]),
+      tex_y : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
+      clut_row : new FormControl(0,[Validators.min(0),Validators.max(1),Validators.required]),
+      clut_x : new FormControl(0,[Validators.min(0),Validators.max(1008),Validators.required]),
+      clut_y : new FormControl(0,[Validators.min(0),Validators.max(255),Validators.required]),
     });
+  }
+
+  private field_value(name:string):number{
+    return Number(this.form.get(name)?.value) || 0;
+  }
+
+  private set_field(name:string, v:number){
+    this.form.get(name)?.setValue(v,{emitEvent:false});
+  }
+
+  update_limits(){
+
+    if(this.preview==null){
+      return;
+    }
+
+    const value = this.field_value('clut');
+
+    const divisor = (value>16)?2:4;
+
+    const hw_width = Math.ceil(this.preview!.width/divisor);
+
+    const tx_max = Math.floor((1024-hw_width)/16)*16;
+    this.tex_x.max = tx_max;
+
+    let tx = Math.min(this.field_value('tex_x'),tx_max);
+
+    const page_hw = (value>16)?128:64;
+    const u_limit = Math.floor((page_hw-hw_width)/16)*16;
+
+    if((tx&63)>u_limit){
+
+      const up = (tx&~63)+64;
+      const down = (tx&~63)|u_limit;
+
+      tx = (tx>this.tex_x_last&&up<=tx_max)?up:down;
+
+    }
+
+    this.set_field('tex_x',tx);
+
+    this.tex_x_last=tx;
+
+    const ty_max = 256-this.preview!.height;
+    this.tex_y.max = ty_max;
+    this.set_field('tex_y',Math.min(this.field_value('tex_y'),ty_max));
+
+    const cx_max = 1024-((value>16)?256:16);
+    this.clut_x.max = cx_max;
+    this.set_field('clut_x',Math.min(this.field_value('clut_x'),cx_max));
+
   }
 
   draw_preview(){
-  
- 
+
     this.ctx = this.cnv.nativeElement.getContext("2d") as CanvasRenderingContext2D;
     this.ctx!.imageSmoothingEnabled=false;
 
-    
-    this.preview! = new Image();
 
-    this.preview!.src=bmp_preview_url;
+    this.preview = new Image();
 
-    this.preview!.onload = () =>{
-      
-        
+    this.preview.src=bmp_preview_url;
+
+    this.preview.onload = () =>{
+
       this.ctx?.drawImage(this.preview!,0,0,this.cnv!.nativeElement.width,this.cnv!.nativeElement.height);
 
-      
+      this.update_limits();
+
     }
-  
+
   }
 
   ngOnDestroy() {
-    this.taskCompletedSubscription.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngOnInit(){
-    this.taskCompletedSubscription = this.transfer.bmpTaskCompleted$.subscribe(() => {
+      this.transfer.bmpTaskCompleted$.pipe(takeUntil(this.destroy$)).subscribe(() => {
       this.post_delete=true;
-      this.btn_translation='button.post';   
+      this.btn_translation='button.post';
       this.draw_preview();
     });
 
-    this.form.get('clut')?.valueChanges.subscribe(value=>{
-      if(value<2){
-       this.form.get('clut')?.setValue(2,{emitEvent:false});
-      }
-      else if (value>256 || value===null){
-        this.form.get('clut')?.setValue(256,{emitEvent:false});
-      }
+    this.form.get('clut')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
 
-    }); 
+      this.update_limits();
 
-    this.form.get('use_alpha')?.valueChanges.subscribe(value=>{
+    });
+
+    this.form.get('tex_x')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
+
+      this.update_limits();
+
+    });
+
+    this.form.get('clut_x')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
+
+      this.update_limits();
+
+    });
+
+    this.form.get('use_alpha')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value=>{
       if(value){
         this.r_s.sliderDimensionReset();
         this.g_s.sliderDimensionReset();
         this.b_s.sliderDimensionReset();
       }
 
-    }); 
-
-
-    this.form.get('r_slider')?.valueChanges.subscribe(value=>{
-      if(value<0){
-        this.form.get('r_slider')?.setValue(0,{emitEvent:false});
-        this.form.get('r_numeric')?.setValue(0,{emitEvent:false});
-        
-      }
-      else if(value>255){
-        this.form.get('r_slider')?.setValue(255,{emitEvent:false});
-        this.form.get('r_numeric')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('r_numeric')?.setValue(value,{emitEvent:false});
-      }
-
     });
 
-    this.form.get('g_slider')?.valueChanges.subscribe(value=>{
-      if(value<0){
-        this.form.get('g_slider')?.setValue(0,{emitEvent:false});
-        this.form.get('g_numeric')?.setValue(0,{emitEvent:false});
-      }
-      else if(value>255){
-        this.form.get('g_slider')?.setValue(255,{emitEvent:false});
-        this.form.get('g_numeric')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('g_numeric')?.setValue(value,{emitEvent:false});
-      }
-
-    });
-    
-    this.form.get('b_slider')?.valueChanges.subscribe(value=>{
-      if(value<0){
-        this.form.get('b_slider')?.setValue(0,{emitEvent:false});
-        this.form.get('b_numeric')?.setValue(0,{emitEvent:false});
-      }
-      else if(value>255){
-        this.form.get('b_slider')?.setValue(255,{emitEvent:false});
-        this.form.get('b_numeric')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('b_numeric')?.setValue(value,{emitEvent:false});
-      }
-
-    });
-
-
-    this.form.get('r_numeric')?.valueChanges.subscribe(value=>{
-      if(value<0 || value===null){
-        this.form.get('r_numeric')?.setValue(0,{emitEvent:false});
-        this.form.get('r_slider')?.setValue(0,{emitEvent:false});
-      }
-      else if(value>255){
-        this.form.get('r_numeric')?.setValue(255,{emitEvent:false});
-        this.form.get('r_slider')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('r_slider')?.setValue(value,{emitEvent:false});
-      }
-
-    });
-
-    this.form.get('g_numeric')?.valueChanges.subscribe(value=>{
-      if(value<0 || value===null){
-        this.form.get('g_numeric')?.setValue(0,{emitEvent:false});
-        this.form.get('g_slider')?.setValue(0,{emitEvent:false});
-      }
-      else if(value>255){
-        this.form.get('g_numeric')?.setValue(255,{emitEvent:false});
-        this.form.get('g_slider')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('g_slider')?.setValue(value,{emitEvent:false});
-      }
-
-    });
-    
-    this.form.get('b_numeric')?.valueChanges.subscribe(value=>{
-      if(value<0 || value===null){
-        this.form.get('b_numeric')?.setValue(0,{emitEvent:false});
-        this.form.get('b_slider')?.setValue(0,{emitEvent:false});
-      }
-      else if(value>255){
-        this.form.get('b_numeric')?.setValue(255,{emitEvent:false});
-        this.form.get('b_slider')?.setValue(255,{emitEvent:false});
-      }
-      else{
-        this.form.get('b_slider')?.setValue(value,{emitEvent:false});
-      }
-
-    });
-
-    this.form.get('bfr')?.valueChanges.subscribe(value=>{
-      if(value<0 || value===null){
-       this.form.get('bfr')?.setValue(0,{emitEvent:false});
-      }
-      else if (value>4){
-        this.form.get('bfr')?.setValue(4,{emitEvent:false});
-      }
-    });
+    link_slider_numeric(this.form,'r_slider','r_numeric',0,255,this.destroy$);
+    link_slider_numeric(this.form,'g_slider','g_numeric',0,255,this.destroy$);
+    link_slider_numeric(this.form,'b_slider','b_numeric',0,255,this.destroy$);
 
   }
 
@@ -217,26 +187,32 @@ export class RpfFormComponent implements OnInit{
     const g = this.form.get('g_numeric')?.value;
     const b = this.form.get('b_numeric')?.value;
     return `rgb(${r}, ${g}, ${b})`;
-  } 
-   
-   
-  async create_image_json() : Promise<ImageDTO>{   
+  }
 
-    
+
+  async create_image_json() : Promise<ImageDTO>{
+
+
 
     let CLUT_size = this.form.get('clut')?.value;
-    
+
     let r_out = this.form.get('r_numeric')?.value;
     let g_out = this.form.get('g_numeric')?.value;
     let b_out = this.form.get('b_numeric')?.value;
-   
+
     let mode_slc = this.form.get('mode')?.value==='1';
 
-    let BFR_size = this.form.get('bfr')?.value;
+    let trow = this.form.get('tex_row')?.value;
+    let tx = this.form.get('tex_x')?.value;
+    let ty = this.form.get('tex_y')?.value;
+
+    let crow = this.form.get('clut_row')?.value;
+    let cx = this.form.get('clut_x')?.value;
+    let cy = this.form.get('clut_y')?.value;
 
     let CHK = this.form.get('use_alpha')?.value;
 
-    const $instance = await ImageDTO.create(this.transfer.file_text!,parseInt(CLUT_size),(CHK)?[parseInt(r_out),parseInt(g_out),parseInt(b_out)]:null,(mode_slc),parseInt(BFR_size));
+    const $instance = await ImageDTO.create(this.transfer.file_text!,parseInt(CLUT_size),(CHK)?[parseInt(r_out),parseInt(g_out),parseInt(b_out)]:null,(mode_slc),trow,tx,ty,crow,cx,cy);
 
     return $instance;
 
@@ -246,29 +222,29 @@ export class RpfFormComponent implements OnInit{
 
     if(this.post_delete===true){
       this.btn_enabled = false;
-      await this.post();      
+      await this.post();
       this.post_delete=false;
       this.btn_translation='button.delete';
       this.btn_enabled = true;
-      
+
     }
     else{
       this.btn_enabled = false;
       await this.delete();
       this.post_delete=true;
-      this.btn_translation='button.post';     
-      this.btn_enabled = true;   
+      this.btn_translation='button.post';
+      this.btn_enabled = true;
     }
-  
+
   }
 
-  
+
   async delete():Promise<void>{
 
     const full_url = `${base_url}${image_actions}`;
 
     await this.transfer.generic_delete(tex.id,full_url);
-    
+
     this.transfer.reset_tex();
 
 
@@ -289,16 +265,18 @@ export class RpfFormComponent implements OnInit{
 
       const $response : TextureDTO = await this.transfer.generic_get($id,full_url) as TextureDTO;
 
-      tex.reset($response.rpF_ID,$response.clut,$response.pixels,$response.width,$response.height);
+      tex.reset($response.rpF_ID,$response.clut,$response.pixels,$response.width,$response.height,$response.tex_X,$response.tex_Y);
 
       flip_tex_state();
 
-    }    
+      this.transfer.rpfTaskSource.next();
 
-    
+    }
+
+
 
   }
 
- 
+
 
 }

@@ -1,7 +1,6 @@
 {
 "button":{
     "post":"Post",
-    "patch":"Save changes",
     "delete":"Delete",
     "export":"Export",
     "play":"Play/Stop"
@@ -9,34 +8,35 @@
 "link":{
     "manage":"Manage files",
     "about":"About",
-    "prefs":"Preferences",
     "clear":"Clear asset selection",
     "reset":"Reset preview assets"
 },
 "label":{
     "anim-sel":"Animation select:",
     "audio-prev":"WL audio preview:",
-    "precision":"Fixed-point precision:",
+    "unit":"Vertex translation unit:",
     "fps":"Target FPS:",
     "target-w":"Target texture width:",
     "target-h":"Target texture height:",
+    "tex_offset":"Texture UV offset X / Y:",
+    "use_rpf":"Use RPF placement:",
+    "rpf_id":"RPF ID:",
     "clut":"CLUT size:",
     "rpf-method":"Compression method:",
     "alpha":"Use alpha:",
-    "p-bfr":"Protected Buffer size:",
+    "tex_placement":"Texture VRAM half / X / Y:",
+    "clut_placement":"CLUT VRAM half / X / Y:",
     "loop":"Loop:",
-    "differential":"Differential threshold bits:",
-    "language":"Language:",
-    "share":"Share asset ownership:"
+    "differential":"Differential threshold bits:"
 },
 "option":{
     "anim-none":"-NONE-",
     "anim-present":"Animation",
-    "prec-truncation":"Truncation",
-    "prec-low":"Low",
-    "prec-med":"Medium",
-    "prec-std":"Standard",
-    "prec-hi":"High",
+    "unit-min":"Minimum",
+    "unit-low":"Low",
+    "unit-med":"Medium",
+    "unit-hi":"High",
+    "unit-max":"Maximum",
     "fps-full":"Full",
     "fps-half":"Half",
     "proximity":"Proximity method",
@@ -46,8 +46,7 @@
     "decimal":"."
 },
 "alerts":{
-    "about":"Copyright - Emrah Veladžić, Tarik Frljak, 2025.",
-    "timeout":"Your session has expired. Please log in again.",
+    "about":"Copyright - Emrah Veladžić, 2025.",
     "server_error":"Server is not reachable.",
     "not-bmp":"File appears to not be a BMP-format image.",
     "not-wav":"File appears to not be a WAV-format audio.",

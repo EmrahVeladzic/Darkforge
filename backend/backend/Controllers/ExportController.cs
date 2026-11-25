@@ -1,7 +1,6 @@
 ﻿using backend.Database;
 using backend.Models;
 using backend.Requests;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Controllers
 {
 
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ExportController : ControllerBase
@@ -23,14 +21,9 @@ namespace backend.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult>Get(int ast_id, int rpf_id, int wl_id)
+        public async Task<IActionResult> Get(long ast_id, long rpf_id, long wl_id)
         {
 
-            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
-            {
-                return StatusCode(401);
-            }
 
 
             using (DarkforgeDBContext ctx = new DarkforgeDBContext())
@@ -46,7 +39,7 @@ namespace backend.Controllers
                     {
                         if (ast.MDL != null)
                         {
-                            ast.MDL.Meshes = await ctx.MSHs.Where(m => m.MDL_ID == ast.MDL_ID).ToListAsync();
+                            ast.MDL.Meshes = await ctx.MSHs.Where(m => m.MDL_ID == ast.MDL_ID).OrderBy(m => m.ID).ToListAsync();
 
                             foreach (MSH m in ast.MDL.Meshes)
                             {
@@ -60,13 +53,13 @@ namespace backend.Controllers
                         if (ast.FKR != null)
                         {
 
-                            ast.FKR.Bones = await ctx.BNs.Where(b => b.FKR_ID == ast.FKR_ID).ToListAsync();
+                            ast.FKR.Bones = await ctx.BNs.Where(b => b.FKR_ID == ast.FKR_ID).OrderBy(b => b.ID).ToListAsync();
 
-                            ast.FKR.Animations = await ctx.ANMs.Where(a => a.FKR_ID == ast.FKR_ID).ToListAsync();
+                            ast.FKR.Animations = await ctx.ANMs.Where(a => a.FKR_ID == ast.FKR_ID).OrderBy(a => a.ID).ToListAsync();
 
                             foreach (ANM a in ast.FKR.Animations)
                             {
-                                a.Tracks = await ctx.TKs.Where(t => t.ANM_ID == a.ID).ToListAsync();
+                                a.Tracks = await ctx.TKs.Where(t => t.ANM_ID == a.ID).OrderBy(t => t.ID).ToListAsync();
                             }
                         }
 
@@ -104,13 +97,13 @@ namespace backend.Controllers
                     export.WL = Convert.ToBase64String(wl.ToArrayBuffer());
 
                     wl.Clear();
-                }                
+                }
 
-               
 
-                return StatusCode(200,export);
 
-            }       
+                return StatusCode(200, export);
+
+            }
 
 
         }

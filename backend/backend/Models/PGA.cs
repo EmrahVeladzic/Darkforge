@@ -8,14 +8,14 @@ using System.Runtime.InteropServices;
 
 namespace backend.Models
 {
-    [Table("PGA", Schema ="Models")]
-    public class PGA:BaseBufferEntity
+    [Table("PGA", Schema = "Models")]
+    public class PGA : BaseBufferEntity
     {
         //Indexed image data. Points to slots in the CLUT. Element size is 1 byte by default but can represent multiple pixels. 
 
-        public PGA():base()
+        public PGA() : base()
         {
-            
+
         }
 
         public void Serialize(IMG_DATA IMG)
@@ -37,29 +37,41 @@ namespace backend.Models
                 }
 
 
-                value <<= IMG.Shift_Value;
-
-                value |= IMG.Get_Index(compare);
-
-
-
-                if (IMG!.Shift_Value == 0 || (IMG!.Shift_Value != 0 && ((i + 1) % (8 / IMG!.Shift_Value) == 0)))
+                if (IMG!.Shift_Value == 0)
                 {
-                    this.ToSerialize.Add(value);
+                    this.ToSerialize.Add(IMG.Get_Index(compare));
 
-                    value = 0;
+                }
 
+                else
+                {
+                    int per = 8 / IMG!.Shift_Value;
+
+                    value |= (byte)(IMG.Get_Index(compare) << (IMG!.Shift_Value * (i % per)));
+
+                    if ((i + 1) % per == 0)
+                    {
+                        this.ToSerialize.Add(value);
+
+                        value = 0;
+
+                    }
 
                 }
 
             }
 
+            if (IMG!.Shift_Value != 0 && IMG!.Image!.Data!.Count % (8 / IMG!.Shift_Value) != 0)
+            {
+                this.ToSerialize.Add(value);
+            }
+
             this.Serialized = this.ToSerialize.ToArray();
         }
 
-        public  override void Deserialize()
+        public override void Deserialize()
         {
-            this.ToSerialize=this.Serialized!.ToList();
+            this.ToSerialize = this.Serialized!.ToList();
 
         }
 
@@ -72,5 +84,5 @@ namespace backend.Models
     }
 
 
-  
+
 }

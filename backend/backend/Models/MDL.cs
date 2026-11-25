@@ -2,17 +2,23 @@
 
 namespace backend.Models
 {
-    [Table("MDL",Schema ="Models")]
-    public class MDL:BaseEntity
+    [Table("MDL", Schema = "Models")]
+    public class MDL : BaseEntity
     {
         [NotMapped]
         public List<MSH> Meshes { get; set; }
 
         [Column("TargetTextureWidth")]
-        public byte? Width { get; set; }
+        public byte Width { get; set; }
 
         [Column("TargetTextureHeight")]
-        public byte? Height { get; set; }
+        public byte Height { get; set; }
+
+        [Column("TargetTextureOffsetX")]
+        public byte OffsetX { get; set; }
+
+        [Column("TargetTextureOffsetY")]
+        public byte OffsetY { get; set; }
 
 
         public MDL() : base()
@@ -22,7 +28,7 @@ namespace backend.Models
 
         public override void Serialize()
         {
-            foreach(MSH m in Meshes)
+            foreach (MSH m in Meshes)
             {
                 m.Serialize();
             }
@@ -32,7 +38,7 @@ namespace backend.Models
         {
             foreach (MSH m in Meshes)
             {
-                m.Deserialize();
+                m.Deserialize(this.Width, this.Height, this.OffsetX, this.OffsetY);
             }
 
         }

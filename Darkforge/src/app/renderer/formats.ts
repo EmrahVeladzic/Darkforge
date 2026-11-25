@@ -12,20 +12,27 @@ export class Texture{
     public Width! : number;
     public Height!: number;
     public Data! : Uint16Array;
+    public offsetX : number = 0;
+    public offsetY : number = 0;
 
-    constructor(i:number,clut:number[],pixels:number[],width:number,height:number){
 
-        this.reset(i,clut,pixels,width,height);
+
+    constructor(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0) {
+
+        this.reset(i,clut,pixels,width,height,x,y);
         
     }
 
-    public reset(i:number,clut:number[],pixels:number[],width:number,height:number):void{
-
+    public reset(i:number,clut:number[],pixels:number[],width:number,height:number,x:number=0,y:number=0):void{
         this.id=i;
         this.CLUT=clut;
 
+        this.offsetX=(x&63)<<((clut.length>16)?1:2);
+        this.offsetY=y;
+
         for(let i =0; i<this.CLUT.length;i++){
-           this.CLUT[i]=(this.CLUT[i]<<1|((this.CLUT[i]>>15)&1))&0xFFFF;
+           const c = this.CLUT[i];
+           this.CLUT[i]=(((c&0x1F)<<11)|(((c>>5)&0x1F)<<6)|(((c>>10)&0x1F)<<1)|((c>>15)&1))&0xFFFF;
         }      
 
         this.Indices=pixels;
@@ -43,16 +50,30 @@ export class Texture{
 
             let base_byte = this.Indices[i];
 
-            for(let j = data_length_mult-1; j>=0; j--){
-                
-                this.Data[((i*data_length_mult)+(data_length_mult-1-j))%(this.Width*this.Height)]=this.CLUT[((base_byte>>(j*bpi))&mask)];
-                              
+            for(let j = 0; j<data_length_mult; j++){
+
+                this.Data[((i*data_length_mult)+j)%(this.Width*this.Height)]=this.CLUT[((base_byte>>(j*bpi))&mask)];
+
             }
 
 
         }
+
+        let atlas = new Uint16Array(256*256);
+        atlas.fill(1);
+
+        for (let v = 0; v < this.Height; v++) {
+
+            for (let u = 0; u < this.Width; u++) {
+                atlas[((v + this.offsetY) * 256) + (u + this.offsetX)] = this.Data[(v * this.Width) + u];
+            }
+
+        }
+
         
-        this.CLUT=[];
+
+        this.Data=atlas;
+        
         this.Indices=[];
 
     }
@@ -68,25 +89,25 @@ export class Audio{
     public ChannelCount! : number;
     public BlocksPerChannel!:number;
     public Looping! :boolean;
-    public ThresholdBits!:number;
+
     public Samples! : number[];
 
-    constructor(i:number,data:number[],sample_rate:number,channels:number,blocks:number,threshold:number){
+    constructor(i:number,data:number[],sample_rate:number,channels:number,blocks:number){
 
-        this.reset(i,data,sample_rate,channels,blocks,threshold);
+        this.reset(i,data,sample_rate,channels,blocks);
 
     }
 
 
-    public reset(i:number,data:number[],sample_rate:number,channels:number,blocks:number,threshold:number):void{
+    public reset(i:number,data:number[],sample_rate:number,channels:number,blocks:number):void{
         this.id=i;
         this.BlockData=data;
         this.SampleRate=sample_rate;
         this.ChannelCount=channels;
         this.BlocksPerChannel=blocks;
         
-        this.ThresholdBits=threshold;
-        this.Looping= this.BlockData[1]==6;
+
+        this.Looping = (this.BlockData[1] & 0x2) !== 0;
         this.Samples = [];
 
         let old = 0;
@@ -101,12 +122,12 @@ export class Audio{
 
                 let samp = this.BlockData[(i+2+j)];
 
-                this.Samples.push(get_pcm_value(((samp>>4)&0xF),shift,filter,old,older));     
+                this.Samples.push(get_pcm_value((samp&0xF),shift,filter,old,older));     
                 
                 older=old;
                 old=this.Samples[this.Samples.length-1];
 
-                this.Samples.push(get_pcm_value((samp&0xF),shift,filter,old,older));
+                this.Samples.push(get_pcm_value(((samp>>4)&0xF),shift,filter,old,older));
                
                 older=old;
                 old=this.Samples[this.Samples.length-1];
@@ -217,9 +238,9 @@ export class Mesh{
     public ind?:Index | null;
     public nrm?:Normal | null;
     public uv?:UV | null;
-
+    public material : number;
     
-    constructor(id:number,v:Vertex | null,i:Index | null,n:Normal | null,u:UV | null,b:number | null) {
+    constructor(id:number, mat:number ,v:Vertex | null,i:Index | null,n:Normal | null,u:UV | null,b:number | null) {
         
         this.id=id;
         this.bN_ID=b;
@@ -227,6 +248,7 @@ export class Mesh{
         this.ind=i;
         this.nrm=n;
         this.uv=u;
+        this.material=mat;
     }
 
 }
@@ -237,13 +259,17 @@ export class Model{
     public meshes:Mesh[];
     public width:number;
     public height:number;
-    
-    constructor(i:number,m:Mesh[],w:number,h:number) {
+    public offsetX:number;
+    public offsetY:number;
+
+    constructor(i:number,m:Mesh[],w:number,h:number,ox:number,oy:number) {
         
         this.id=i;
         this.meshes=m;
         this.width=w;
         this.height=h;
+        this.offsetX=ox;
+        this.offsetY=oy;
     }
 
 
@@ -263,6 +289,10 @@ export class Track{
     public t_Index?:number;
     public r_Index?:number;
     public s_Index?:number;
+
+    public t_Interp?:number;
+    public r_Interp?:number;
+    public s_Interp?:number;
     
     constructor(i:number, b:number, t:number[],r:number[],s:number[],tt:number[],rt:number[],st:number[]) {
         
@@ -301,14 +331,18 @@ export class Animation{
 export class Bone{
     public id :number;
     public parent_ID?:number;
-    public initialTransform:number[];
+    public initialTranslation:number[];
+    public initialRotation:number[];
+    public initialScale:number[];
 
     public currentTRS?:mat4;
 
-    constructor(i:number, t:number[],p?:number) {
+    constructor(i:number, t:number[],r:number[],s:number[],p?:number) {
         this.id=i;
         this.parent_ID=p;
-        this.initialTransform=t;
+        this.initialTranslation=t;
+        this.initialRotation=r;
+        this.initialScale=s;
         this.currentTRS=get_Mat(t);
     }
 
@@ -360,10 +394,10 @@ export class Asset{
                     msh.vt.vertices = msh.vt?.vertices.map(v=>get_float(v,this.precisionBits));     
                 }
                 if(msh.nrm!=null){
-                    msh.nrm.normals = msh.nrm?.normals.map(n=>get_float(n,this.precisionBits));  
+                    msh.nrm.normals = msh.nrm?.normals.map(n=>get_float(n,12));  
                 }                                             
                 if(msh.uv!=null){                  
-                    normalize_uv(msh.uv.textureCoordinates,m.width,m.height);
+                    normalize_uv(msh.uv.textureCoordinates);
                 }        
 
             }
@@ -374,8 +408,10 @@ export class Asset{
 
             for(let b of f.bones){
                 
-                b.initialTransform= b.initialTransform.map(i=>get_float(i,this.precisionBits));
-                b.currentTRS=get_Mat(b.initialTransform);
+                b.initialTranslation= b.initialTranslation.map(i=>get_float(i,this.precisionBits));
+                b.initialRotation= b.initialRotation.map(i=>get_float(i,12));
+                b.initialScale= b.initialScale.map(i=>get_float(i,12));
+                b.currentTRS=get_Mat(b.initialTranslation.concat(b.initialRotation).concat(b.initialScale));
 
             }
 
@@ -385,8 +421,8 @@ export class Asset{
                 for(let t of a.tracks){
 
                     t.translations= t.translations.map(tr=>get_float(tr,this.precisionBits));
-                    t.rotations= t.rotations.map(ro=>get_float(ro,this.precisionBits));
-                    t.scales= t.scales.map(sc=>get_float(sc,this.precisionBits));                   
+                    t.rotations= t.rotations.map(ro=>get_float(ro,12));
+                    t.scales= t.scales.map(sc=>get_float(sc,12));                   
 
                     time_float(t.t_Frames,f.fps!);
                     time_float(t.r_Frames,f.fps!);
@@ -418,6 +454,10 @@ export class Asset{
                     t.t_Index=0;
                     t.r_Index=0;
                     t.s_Index=0;
+
+                    t.t_Interp=0;
+                    t.r_Interp=0;
+                    t.s_Interp=0;
 
                 }
 

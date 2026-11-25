@@ -1,4 +1,4 @@
-import { Component, ElementRef, Input, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { FileTransferService } from './file_service/file-transfer.service';
 import { Injectable } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
@@ -8,7 +8,6 @@ import { RpfFormComponent } from "../../forms/rpf-form/rpf-form.component";
 import { WlFormComponent } from "../../forms/wl-form/wl-form.component";
 import { GlbFormComponent } from "../../forms/glb-form/glb-form.component";
 import { TranslateService,TranslatePipe, TranslateDirective} from '@ngx-translate/core';
-import { PreferenceFormComponent } from '../../forms/preference-form/preference-form.component';
 import {tex,sfx,ast} from '../../assets/global_assets';
 import { alert_localized } from '../../utils/alerts';
 import { base_url, export_actions } from '../http';
@@ -20,16 +19,23 @@ import JSZip from 'jszip';
 @Component({
   selector: 'app-file-transfer',
   standalone: true,
-  imports: [HttpClientModule, ReactiveFormsModule, RpfFormComponent, WlFormComponent, GlbFormComponent, PreferenceFormComponent],
+  imports: [HttpClientModule, ReactiveFormsModule, RpfFormComponent, WlFormComponent, GlbFormComponent],
   templateUrl: './file-transfer.component.html',
   styleUrl: './file-transfer.component.css',
 
   
 })
-export class FileTransferComponent {
+export class FileTransferComponent implements OnChanges {
 @Input() transfer!: FileTransferService;
 @Input() public Menu! :string;
 @ViewChild('download') download_link?: ElementRef<HTMLAnchorElement>;
+@ViewChild(WlFormComponent) wl_form?: WlFormComponent;
+
+ngOnChanges(changes: SimpleChanges):void{
+  if(changes['Menu'] && this.Menu!=='wl'){
+    this.wl_form?.audioPlayer?.audio?.nativeElement.pause();
+  }
+}
 
 public async write_to_local_storage(file: Blob, name: string): Promise<void> {
     return new Promise((resolve) => {
@@ -59,7 +65,6 @@ public async export_all_available(to_export:ExportDTO,name:string):Promise<void>
   let ast_buffer = to_export.ast!= null ? base64ToUint8Array(to_export.ast) : null;
   let rpf_buffer = to_export.rpf!= null ? base64ToUint8Array(to_export.rpf) : null;
   let wl_buffer = to_export.wl!= null ? base64ToUint8Array(to_export.wl) : null;
-
 
   let count = 0;
 
@@ -164,10 +169,9 @@ public async export_files():Promise<void>{
   }
 
   else{
-   
+    
+  
     alert_localized(this.translate,'alerts.export-null');
-
-
 
   }
 

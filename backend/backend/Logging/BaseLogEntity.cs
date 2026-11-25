@@ -7,17 +7,15 @@ namespace backend.Logging
     {
         [Key]
         [Column("ID")]
-        public int Id { get; set; }
+        public long Id { get; set; }
 
-        [Column("OwnerID")]
-        public int OwnerID { get; set; }
 
         [Column("FileID")]
         public string? FileID { get; set; }
 
         public BaseLogEntity()
         {
-            
+
         }
 
     }
