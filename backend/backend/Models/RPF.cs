@@ -130,7 +130,14 @@ namespace backend.Models
                                     | (int)((clut_line & 0x01FF) << 6));
 
             temp.Add(82);
-            temp.Add(FrameStruct);
+            if (frames == 1)
+            {
+                temp.Add(0x1);
+            }
+            else
+            {
+                temp.Add(FrameStruct);
+            }
             PrimitiveSerialization.SerializePrimitive(this.Width, temp);
             PrimitiveSerialization.SerializePrimitive(this.Height, temp);
             PrimitiveSerialization.SerializePrimitive(this.CLUT, temp);

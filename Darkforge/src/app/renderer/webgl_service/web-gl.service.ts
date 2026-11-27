@@ -8,7 +8,7 @@ import { flip_tex_state, tex,tex_update ,ast, ast_update, flip_ast_state, curren
 import { SkeletalRig } from '../formats';
 import { get_Mat, get_Quat, get_Vec } from '../../../utils/transform';
 import { Subscription } from 'rxjs';
-import { get_interpolation_value } from '../../../utils/interpolation';
+import { advance_track } from '../../../utils/interpolation';
 import { force_reload } from '../../http';
 
 @Injectable({
@@ -81,14 +81,7 @@ export class WebGLService {
     }
 
 
-    temp_track.t_Interp=get_interpolation_value(temp_track.t_Interp!,_time,temp_track?.t_Frames[(temp_track.t_Index!%temp_track.t_Frames.length)]!,temp_track?.t_Frames[((temp_track.t_Index!+1)%temp_track.t_Frames.length)]!);
-  
-
-    if(temp_track.t_Interp>=1){
-      
-      temp_track!.t_Interp=0;
-      temp_track!.t_Index!++;
-    }
+    [temp_track.t_Index, temp_track.t_Interp] = advance_track(temp_track.t_Frames, temp_track.t_Index!, temp_track.t_Interp!, _time);
 
     let index = temp_track?.t_Index!
 
@@ -98,14 +91,7 @@ export class WebGLService {
     let out_t :vec3 = vec3.create();
     vec3.lerp(out_t,t_b,t_e,temp_track.t_Interp);
 
-    temp_track.r_Interp = get_interpolation_value(temp_track.r_Interp!,_time,temp_track?.r_Frames[(temp_track.r_Index!%temp_track.r_Frames.length)]!,temp_track?.r_Frames[((temp_track.r_Index!+1)%temp_track.r_Frames.length)]!);
-
-   
-
-    if(temp_track.r_Interp>=1){
-      temp_track.r_Interp=0
-      temp_track!.r_Index!++;
-    }
+    [temp_track.r_Index, temp_track.r_Interp] = advance_track(temp_track.r_Frames, temp_track.r_Index!, temp_track.r_Interp!, _time);
 
     index = temp_track?.r_Index!
 
@@ -116,14 +102,7 @@ export class WebGLService {
     quat.slerp(out_r,r_b,r_e,temp_track.r_Interp);
     quat.normalize(out_r,out_r);
 
-    temp_track.s_Interp = get_interpolation_value(temp_track.s_Interp!,_time,temp_track?.s_Frames[(temp_track.s_Index!%temp_track.s_Frames.length)]!,temp_track?.s_Frames[((temp_track.s_Index!+1)%temp_track.s_Frames.length)]!);
-
-    
-
-    if(temp_track.s_Interp>=1){
-      temp_track.s_Interp=0;
-      temp_track!.s_Index!++;
-    }
+    [temp_track.s_Index, temp_track.s_Interp] = advance_track(temp_track.s_Frames, temp_track.s_Index!, temp_track.s_Interp!, _time);
 
     index = temp_track?.s_Index!
 
@@ -294,7 +273,7 @@ export class WebGLService {
               
             for(let b of ast.fkr.bones){
 
-              this.interpolate_bone_transforms(ast.fkr,diff,b.id);
+              this.interpolate_bone_transforms(ast.fkr,diff/1000,b.id);
 
             }
 
