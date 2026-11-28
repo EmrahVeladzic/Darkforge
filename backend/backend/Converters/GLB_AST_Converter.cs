@@ -127,7 +127,7 @@ namespace backend.Converters
 
         private static void ExpandKeys(float[] times, float[] keys, int components, float offset, byte fps, List<float> out_times, List<float> out_keys)
         {
-            float margin = 0.25f / (float)Math.Max((int)fps - 1, 1);
+            int step = Math.Max((int)fps - 1, 1);
 
             for (int k = 0; k < times.Length; k++)
             {
@@ -148,20 +148,20 @@ namespace backend.Converters
                 float t1 = times[k + 1] - offset;
                 float span = t1 - t0;
 
-                if (!(span > 1.0f))
+                if (!(span > 0.0f))
                 {
                     continue;
                 }
 
-                for (int n = 1; n < 256; n++)
+                double f0 = Math.Round((double)((float)step * t0));
+                double f1 = Math.Round((double)((float)step * t1));
+                double previous = f0;
+
+                for (int n = 0; n < 256 && f1 - previous > (double)step; n++)
                 {
-                    float t = t0 + (float)n;
+                    previous += (double)step;
 
-                    if (!(t1 - t > margin))
-                    {
-                        break;
-                    }
-
+                    float t = (float)(previous / (double)step);
                     float f = (t - t0) / span;
 
                     float[] v = new float[components];
@@ -522,7 +522,22 @@ namespace backend.Converters
                                 List<float> times = new();
                                 List<float> keys = new();
 
-                                ExpandKeys(p.Times, p.Keys, p.Components, min_time, this.Input.TargetFPS, times, keys);
+                                List<float> held_times = new(p.Times);
+                                List<float> held_keys = new(p.Keys);
+
+                                if (held_times[0] > min_time)
+                                {
+                                    held_times.Insert(0, min_time);
+                                    held_keys.InsertRange(0, held_keys.GetRange(0, p.Components));
+                                }
+
+                                if (held_times[held_times.Count - 1] < max_time)
+                                {
+                                    held_times.Add(max_time);
+                                    held_keys.AddRange(held_keys.GetRange(held_keys.Count - p.Components, p.Components));
+                                }
+
+                                ExpandKeys(held_times.ToArray(), held_keys.ToArray(), p.Components, min_time, this.Input.TargetFPS, times, keys);
 
                                 List<byte> key_frames = new();
                                 List<int> key_sources = new();

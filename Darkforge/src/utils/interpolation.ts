@@ -18,8 +18,12 @@ export function advance_track(frames:number[],index:number,interp:number,delta:n
 
     const length = frames.length;
 
-    if(length===0){
+    if(length<2){
         return [index,0];
+    }
+
+    if(index%length===length-1){
+        index++;
     }
 
     let range = get_key_range(frames[index%length],frames[(index+1)%length]);
@@ -28,11 +32,15 @@ export function advance_track(frames:number[],index:number,interp:number,delta:n
 
     let guard = 0;
 
-    while(interp>=1.0 && guard<length){
+    while(interp>=1.0 && guard<2*length){
 
         const leftover = (interp - 1.0) * range;
 
         index++;
+
+        if(index%length===length-1){
+            index++;
+        }
 
         range = get_key_range(frames[index%length],frames[(index+1)%length]);
 
